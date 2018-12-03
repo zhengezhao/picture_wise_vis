@@ -1,0 +1,57 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Neural Network Vis</title>
+     <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/d3.parcoords.css') }}"/>
+   <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/styles.css') }}"/>
+</head>
+
+<script type="text/javascript">
+  var num_of_nn ={{num_of_nn|safe}};
+  var num_of_epoch = {{num_of_epoch|safe}};
+  var data = {{data|safe}};
+  var tsne_data = {{tsne_data|safe}};
+  var true_label = {{true_label|safe}};
+
+</script>
+<body>
+
+  <div class="vis">
+    <div id ='streamgraphdiv' class='frame'>
+    <select id="selectNumber" onchange="changenum()">
+    </select>
+    <button onclick ="change_view()">RESET</button>
+    </div>
+    <div id ='ScatterPlotDiv' class='frame'>
+      <button id='SPReset'>RESET</button>
+    </div>
+    <div id = 'HiddenLayerDiv'>
+      <div id = 'ImageDiv' class='frame'>
+      </div>
+      <div id = 'BarChartDiv' class='frame'>
+      </div>
+      <div id ='HeatMapDiv'>
+      </div>
+    </div>
+
+
+ <!--    <div id = 'barchart'>
+  </div>
+      <div id = 'barchart2'>
+  </div> -->
+</body>
+<script type="text/javascript" src="{{url_for('static', filename='js/math.min.js')}}"></script>
+<script type="text/javascript" src="{{url_for('static', filename='js/jquery-1.11.3.min.js')}}"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-request.v1.min.js"></script>
+<script src="https://d3js.org/d3-collection.v1.min.js"></script>
+<script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
+<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script type="text/javascript" src="{{url_for('static', filename='js/d3-tip.js')}}"></script>
+<script src ="{{url_for('static', filename='js/vis.js')}}" type="text/javascript"></script>
+
+
+</html>

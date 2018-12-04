@@ -10,7 +10,7 @@ var query_data,query_instance_data;
 
 var data_chosen =  data[nn_chosen]['data'];
 var data_chosen_pre ;
-var x,new_x,y,mousex, invertedx,class_chosen, epoch_chosen;
+var x,new_x,y,mousex, invertedx,class_chosen, epoch_chosen, selectedbar;
 //true  if the first is drawn
 var onfirstbarchart = true;
 $("#SPReset").hide();
@@ -105,103 +105,6 @@ function mathMutiply(w1,w2){
 }
 
 
-function Matrix_Calculate(o_data,weight,weight_prev,data_origin,data_prev){
-
-  var o_data= math.matrix(o_data);
-  var weight = math.matrix(weight);
-  var weight_prev = math.matrix(weight_prev);
-  console.log("data_origin",data_origin);
-  console.log("data_prev",data_prev);
-  console.log("o_data",o_data);
-  console.log("weight",weight);
-  var w = math.multiply(o_data,weight);
-  console.log("w",w);
-  console.log("weight_prev",weight_prev);
-  var aw = math.map(w,function(value,i){
-    return value*data_origin[i] ;
-  });
-
-  console.log("aw",aw);
-
-  var w_prev = math.multiply(o_data,weight_prev);
-  console.log("w_prev",w_prev);
-  var aw_prev = math.map(w_prev, function(value,i){
-    return value*data_prev[i];
-  });
-  console.log("aw_prev",aw_prev);
-
-  var result = aw.map(function(item,index){
-    // console.log(item,typeof(item));
-    // console.log(index,aw_prev[index], typeof(aw_prev[index]));
-    return aw = aw_prev.get(index);
-  });
-
-  //console.log(result);
-
-  return result.valueOf();
-}
-
-// function twodarray(m,n){
-//   var x = new Array(m);
-//   for(var i=0; i<x.length;i++){
-//     x[i] = Array.from({length: n}, (v, i) => 0);
-//   }
-//   return x;
-// }
-
-// function matrixKernel(kernel, matrix){ //kernel :5X5 matrix:64X144
-//   var concat_kernel;
-//    for(var j=0; j<kernel.length;j++){
-//       for(var k =0; k<kernel[j].length;k++){
-
-
-//       }
-
-
-//     }
-
-
-
-//   for(var i=0; i<matrix.length/2;i++){
-
-
-//     for(var j=0; j<kernel.length;j++){
-//       for(var k =0; k<kernel[j].length;k++){
-//         matrix[i][i+j] = kernel[j][k];
-
-//       }
-//     }
-
-//   }
-// }
-
-
-// function deconvolution(weight,kernel){
-//   var result  = rray.from({length: 1440}, (v, i) => 0);
-//   //size of weight: 320:20X4X4
-//   //size of the kernel : 20,10,5,5
-//   for(var i=0; i<kernel.length;i++){ //kernel.length = 20
-//     var row_width = weight.length/kernel.length; //16
-//     var output = Array.from({length: row_width*4}, (v, i) => 0); //maxpool :size: 64
-//     var origin_output = weight.slice(i*row_width,(i+1)*row_width);
-//     var output_row_width = Math.sqrt(row_width)*4/2;
-//     for(var j=0; j<origin_output.length;j++){
-//       var c = j % Math.sqrt(row_width);
-//       var r = Math.floor(j/Math.sqrt(row_width));
-//       output[(r*2)*output_row_width+c*2] = origin_output[j]/4;
-//       output[(r*2)*output_row_width+c*2+1] = origin_output[j]/4;
-//       output[(r*2+1)*output_row_width+c*2] = origin_output[j]/4;
-//       output[(r*2+1)*output_row_width+c*2+1] = origin_output[j]/4;
-//     }
-
-//     for(var k=0; k<kernel[i].length;k++){ //10 kernels
-//       var matrix_kernel = twodarray(output.length,result.length/kernel[i].length); //64X144
-
-//      // kernel[i][k] //5X5
-//     }
-
-//   }
-// }
 
 function BackPropagation(bar_index, o_data){
   var bar_data_origin = query_instance_data[bar_index].data_origin;
@@ -286,9 +189,65 @@ function DrawImageHeatMap(o_data){
 
 
 
+function UpdateBarCharts(selectedbar){
+
+  var svgWidth = document.getElementById("BarChartDiv").offsetWidth/3-5;
+  var svgHeight = document.getElementById("BarChartDiv").offsetHeight;
+  var margin = {top:20, bottom:20, left:30, right:20};
+  var width = +svgWidth- margin.left-margin.right;
+  var height = +svgHeight -margin.top- margin.bottom;
+
+  var o_data;
+
+  if(selectedbar==null){
+    o_data = Array.from({length: 10}, (v, i) => 1);
+  }
+  else{
+    o_data = Array.from({length: 10}, (v, i) => 0);
+    o_data[selectedbar]=1;
+  }
+
+  DrawImageHeatMap(o_data);
+
+
+  for(var bar_i=0; bar_i<=1; bar_i++){
+
+    var data_id_update = query_instance_data[bar_i].label;
+
+    var data_update = BackPropagation(bar_i, o_data)[2];
+
+
+    var bar_x_update = d3.scaleLinear().domain(d3.extent(data_update)).range([0,width]).nice();
+    var bar_y_update = d3.scaleBand().domain(data_update.map(function(d,i){return i;})).range([0, height]);
+
+    var g = d3.select("#BarChartDiv").select("#"+data_id_update);
+
+     g.selectAll(".bar").data(data_update)
+      .transition()
+      .duration(2500)
+      .attr("x", function(d) { return bar_x_update(Math.min(0, d)); })
+      .attr("y", function(d,i) { return bar_y_update(i); })
+      .attr("width", function(d) { return Math.abs(bar_x_update(d) - bar_x_update(0)); })
+      .attr("height", bar_y_update.bandwidth())
+      .style("fill",function(d){return (d<0 ? "darkorange":"steelblue");});
+
+
+    var bar_xAxis_update =d3.axisBottom(bar_x_update).ticks(7);
+    var bar_gx_update = g.select(".bar_axis--x").call(bar_xAxis_update);
+
+
+    var bar_yAxis_update = d3.axisLeft(bar_y_update).tickSize(0).tickFormat("");
+    var bar_gy_update = g.select(".bar_axis--y").attr("transform", "translate(" + bar_x_update(0) + ",0)").call(bar_yAxis_update);
+
+
+  }
+
+}
+
 
 function DrawBarCharts(query_instance_data){
 
+  $("#BarChartDiv").empty();
 
   var svgWidth = document.getElementById("BarChartDiv").offsetWidth/3-5;
   var svgHeight = document.getElementById("BarChartDiv").offsetHeight;
@@ -297,8 +256,8 @@ function DrawBarCharts(query_instance_data){
   var height = +svgHeight -margin.top- margin.bottom;
 
 
-  var selectedbar=null;
-  barchartName = "BarChartDiv";
+  selectedbar=null;
+  var barchartName = "BarChartDiv";
 
 
   var o_data = Array.from({length: 10}, (v, i) => 1);
@@ -332,7 +291,7 @@ function DrawBarCharts(query_instance_data){
 
         var bar_yAxis = d3.axisLeft(bar_y).tickSize(0).tickFormat("");
 
-        var bar_gx = g.append("g")
+        var bar_gy = g.append("g")
                       .attr("class","bar_axis bar_axis--y")
                       .attr("transform", "translate(" + bar_x(0) + ",0)")
                       .style('stroke','1px')
@@ -361,8 +320,31 @@ function DrawBarCharts(query_instance_data){
           .attr("height", bar_y.bandwidth())
           .style("fill",function(d){return (d<0 ? "darkorange":"steelblue");});
 
+      if(bar_i ==2){
+        bars.on("click",function(d,i){
+          console.log(i.toString());
+          if(selectedbar==i){
+            selectedbar = null;
+            d3.select(".bar--selected").attr("class","bar").style("fill",function(d){return (d<0 ? "darkorange":"steelblue");});
+
+            UpdateBarCharts(selectedbar);
+          }
+          else{
+            selectedbar =i;
+            d3.select(".bar--selected").attr("class","bar").style("fill",function(d){return (d<0 ? "darkorange":"steelblue");});
+            d3.select(this).attr('class', "bar--selected").style("fill", function(d){ return (d<0 ? "orange":"lightblue");});
+            UpdateBarCharts(selectedbar);
+          }
+
+        });
+      }
+
   }
 }
+
+
+
+
 
 
 
@@ -534,7 +516,7 @@ function DrawScatterPlot(query_data)
             selectedDot = indices[i];
             d3.select(this).style("fill","orange");
             console.log("Image Index: ",selectedDot);
-            $("##HiddenLayerDiv").empty();
+            //$("#HiddenLayerDiv").empty();
             DrawHiddenLayer(selectedDot);
           }
           else if(selectedDot != indices[i]){
@@ -546,7 +528,7 @@ function DrawScatterPlot(query_data)
             d3.select(this).style("fill","orange");
 
             console.log("Image Index: ",selectedDot);
-            $("#HiddenLayerDiv").empty();
+            //$("#HiddenLayerDiv").empty();
             DrawHiddenLayer(selectedDot);
           }
 
@@ -700,15 +682,6 @@ function DrawStreamGraph(data_chosen_pre,data_chosen)
 
                 DrawScatterPlot(query_data);
 
-                // if(onfirstbarchart){
-                //     console.log("first");
-                //     onfirstbarchart = false;
-                //     DrawBarCharts(query_data,'barchart');
-                // }
-                // else{
-                //     console.log("second");
-                //     DrawBarCharts(query_data,'barchart2');
-                // }
             });
         });
 
@@ -738,15 +711,6 @@ function createSvg(sel)
     .attr("height", svgHeight);
 }
 
-function change_view(){
-    $("#selectNumber").val(0).change();
-    d3.select('#barchart').selectAll("svg").remove();
-    d3.select('#barchart2').selectAll("svg").remove();
-    d3.select('#barchart').selectAll("text").remove();
-    d3.select('#barchart2').selectAll("text").remove();
-    onfirstbarchart=true;
-
-}
 
 
 

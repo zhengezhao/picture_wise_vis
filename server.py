@@ -157,8 +157,9 @@ def jsonifydata():
 def index():
     data = jsonifydata()
     #dg.data_full_layer_vectors(1, 100)
-    tsne_data = np.load(tsne_file).tolist()
-    return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, tsne_data = tsne_data, true_label = true_label.tolist())
+    #tsne_data = np.load(tsne_file).tolist()
+    # return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, tsne_data = tsne_data, true_label = true_label.tolist())
+    return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch)
 
 
 @app.route('/data', methods =["GET", "POST"])

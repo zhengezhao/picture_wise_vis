@@ -545,7 +545,8 @@ function DrawScatterPlot(query_data)
     gY.call(yAxis.scale(new_yScale));
 
       svg.selectAll(".dot")
-          .attr("transform", d3.event.transform);
+          .attr("transform", d3.event.transform)
+          .attr("r",3/d3.event.transform.k);
     }
 
         d3.select("#SPReset").on("click", reSet);

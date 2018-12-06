@@ -84,10 +84,14 @@ def data_full_layer_vectors(nn_idx, epoch):
             matrix  ={'f1':f1.numpy(), 'f2': f2.numpy(), 'o': outputs.numpy()}
             predicts = predicted.numpy()
             weights = {'f1': net.fc1[0].weight.detach().numpy(),'f2': net.fc2[0].weight.detach().numpy(), 'o': net.fc3[0].weight.detach().numpy()}
+            bias = {'f1': net.fc1[0].bias.detach().numpy(),'f2': net.fc2[0].bias.detach().numpy(), 'o': net.fc3[0].bias.detach().numpy()}
+            #print(bias['f1'].shape, bias['f2'].shape,bias['o'].shape)
+
 
         results.append(matrix)
         results.append(predicts)
         results.append(weights)
+        results.append(bias)
 
 
         np.save(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_idx,epoch)),results)

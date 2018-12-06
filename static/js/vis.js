@@ -106,6 +106,7 @@ function mathMutiply(w1,w2){
 
 
 
+
 function BackPropagation(bar_index, o_data){
   var bar_data_origin = query_instance_data[bar_index].data_origin;
   var bar_data_prev = query_instance_data[bar_index].data_prev;
@@ -123,6 +124,8 @@ function BackPropagation(bar_index, o_data){
   else{
     var bar_data_o_t= BackPropagation(bar_index+1,o_data)[0];
     var bar_data_p_t = BackPropagation(bar_index+1,o_data)[1];
+    bar_data_o_t  = bar_data_o_t.map(function(d,i){return d- query_instance_data[bar_index+1].bias[i]});
+    bar_data_p_t  = bar_data_p_t.map(function(d,i){return d- query_instance_data[bar_index+1].bias_prev[i]});
     bar_data_o = bar_data_origin.map(function(d,i){return d*mathMutiply(bar_data_o_t,query_instance_data[bar_index+1].weight)[i]});
     bar_data_p = bar_data_prev.map(function(d,i){return d*mathMutiply(bar_data_p_t,query_instance_data[bar_index+1].weight_prev)[i]});
     bar_data = bar_data_o.map(function(d,i){return d- bar_data_p[i]});
@@ -134,6 +137,8 @@ function BackPropagation(bar_index, o_data){
 function ImagePrediction(o_data){
   var bar_data_o_t = BackPropagation(0,o_data)[0];
   var bar_data_p_t = BackPropagation(0,o_data)[1];
+  bar_data_o_t  = bar_data_o_t.map(function(d,i){return d- query_instance_data[0].bias[i]});
+  bar_data_p_t  = bar_data_p_t.map(function(d,i){return d- query_instance_data[0].bias_prev[i]});
   var weight_data_o = mathMutiply(bar_data_o_t, query_instance_data[0].weight);
   var weight_data_p = mathMutiply(bar_data_p_t, query_instance_data[0].weight_prev);
   var weight_data = weight_data_o.map(function(d,i){return d - weight_data_p[i];});
@@ -399,6 +404,8 @@ function DrawScatterPlot(query_data)
   var correctness = query_data["correctness"];
   var data_points = query_data["position"];
   var indices = query_data["index"];
+  var correctness_prev =query_data["correctness_prev"];
+  var true_label = query_data["true_label"];
 
   d3.select("#ScatterPlotDiv").selectAll("svg").remove();
   d3.select("#ScatterPlotDiv").selectAll("text").remove();
@@ -431,12 +438,12 @@ function DrawScatterPlot(query_data)
     .attr("id","scatterplot_title")
     .style("text-anchor", "middle")
     .style("fill","black")
-    .text("NN: "+nn_chosen+" Epoch: "+ epoch_chosen + " Class: "+ classes[class_chosen] +" Accuracy_Change: " + data_chosen[epoch_chosen-1][classes[class_chosen]].toFixed(4));
+    .text("NN: "+nn_chosen+" Epoch: "+ (parseInt(epoch_chosen)-1).toString()+" ~ "+epoch_chosen + " Class: "+ classes[class_chosen] +" Accuracy_Change: " + data_chosen[epoch_chosen-1][classes[class_chosen]].toFixed(4));
 
 
   //Zoom function
   var  zoomBeh = d3.zoom()
-        .scaleExtent([1,10])
+        .scaleExtent([1,500])
         .on("zoom", zoom);
 
     var svg = d3.select('#ScatterPlotDiv')
@@ -489,20 +496,31 @@ function DrawScatterPlot(query_data)
         .attr("cx", function(d){return x(d[0])})
         .attr("cy",function(d){return y(d[1])})
         .style("fill",function(d,i){
-          if(correctness[i]){
+          if(correctness[i]==true_label[i]){
             return "steelblue";
           }
           else{
             return "Red";
           }
          })
+        .style("stroke",function(d,i){
+          if(correctness_prev[i] == true_label[i]){
+            return "steelblue";
+          }
+          else{
+            return "Red";
+          }
+        })
+        .style("stroke-width","1")
         .on("mouseover",function(d){
+            d3.select(this).style("cursor", "pointer");
             d3.select(this).style("fill","orange");
         })
         .on("mouseout",function(d,i){
+          d3.select(this).style("cursor", "default");
           if(indices[i]!=selectedDot){
             d3.select(this).style("fill", function(){
-              if(correctness[i]){
+              if(correctness[i]==true_label[i]){
                 return "steelblue";
               }
               else{
@@ -522,7 +540,7 @@ function DrawScatterPlot(query_data)
           else if(selectedDot != indices[i]){
             selectedDot =indices[i];
             d3.selectAll(".dot").style("fill",function(d,i){
-              if(correctness[i]){return "steelblue";}
+              if(correctness[i]==true_label[i]){return "steelblue";}
               else{return "Red";}
             });
             d3.select(this).style("fill","orange");
@@ -546,7 +564,8 @@ function DrawScatterPlot(query_data)
 
       svg.selectAll(".dot")
           .attr("transform", d3.event.transform)
-          .attr("r",3/d3.event.transform.k);
+          .attr("r",3/d3.event.transform.k)
+          .style("stroke-width",1/d3.event.transform.k);
     }
 
         d3.select("#SPReset").on("click", reSet);

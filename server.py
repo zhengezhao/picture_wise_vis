@@ -170,12 +170,24 @@ def get_data():
     class_idx=int(class_idx)
     epoch_idx= int(epoch_idx)
     print('nn_num:',nn_idx, 'class_idex:', class_idx, "epoch:" ,epoch_idx)
-    if(nn_idx !=0):
+    if(nn_idx !=0 and epoch_idx>1):
         last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_idx,epoch_idx)))[0]['o']
+        last_layer_data_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_idx,epoch_idx-1)))[0]['o']
+
         selected_index = sort_index[bin_counts[class_idx]:bin_counts[class_idx+1]]
-        tsne_result = utils.TSNE_Caculator(last_layer_data[selected_index]);
-        corrects = (np.argmax(last_layer_data[selected_index], axis=1) == true_label[selected_index]).tolist()
-        points_summary = {'position': tsne_result, 'correctness': corrects, 'index': selected_index.tolist()}
+
+        last_layer_diff = last_layer_data[selected_index] - last_layer_data_prev[selected_index]
+
+
+        tsne_result = utils.TSNE_Caculator(last_layer_diff)
+
+        corrects = np.argmax(last_layer_data[selected_index], axis=1).tolist()
+
+        corrects_prev = np.argmax(last_layer_data_prev[selected_index], axis=1).tolist()
+
+        true_labels = true_label[selected_index].tolist()
+
+        points_summary = {'position': tsne_result, 'correctness': corrects, 'correctness_prev': corrects_prev, 'index': selected_index.tolist(), 'true_label': true_labels}
         return jsonify(points_summary)
 
 
@@ -205,6 +217,12 @@ def get_image_data():
 
     weight_o = data_file[2]['o']
 
+    bias_f1 = data_file[3]['f1']
+
+    bias_f2 = data_file[3]['f2']
+
+    bias_o = data_file[3]['o']
+
 
 
     if(epoch_chosen>1):
@@ -223,13 +241,19 @@ def get_image_data():
 
         weight_o_prev = data_file_prev[2]['o']
 
+        bias_f1_prev = data_file_prev[3]['f1']
+
+        bias_f2_prev = data_file_prev[3]['f2']
+
+        bias_o_prev = data_file_prev[3]['o']
 
 
-        data_summary.append({'label': 'f1', 'data_origin': matrix_f1.tolist(), 'data_prev': matrix_f1_prev.tolist(),'weight': weight_f1.tolist(), 'weight_prev': weight_f1.tolist()})
 
-        data_summary.append({'label': 'f2', 'data_origin': matrix_f2.tolist(), 'data_prev': matrix_f2_prev.tolist(),'weight': weight_f2.tolist(), 'weight_prev': weight_f2.tolist()})
+        data_summary.append({'label': 'f1', 'data_origin': matrix_f1.tolist(), 'data_prev': matrix_f1_prev.tolist(),'weight': weight_f1.tolist(), 'weight_prev': weight_f1_prev.tolist(), 'bias': bias_f1.tolist(), 'bias_prev': bias_f1_prev.tolist()})
 
-        data_summary.append({'label': 'o', 'data_origin': matrix_o.tolist(), 'data_prev': matrix_o_prev.tolist(),'weight': weight_o.tolist(), 'weight_prev': weight_o_prev.tolist()})
+        data_summary.append({'label': 'f2', 'data_origin': matrix_f2.tolist(), 'data_prev': matrix_f2_prev.tolist(),'weight': weight_f2.tolist(), 'weight_prev': weight_f2_prev.tolist(), 'bias': bias_f2.tolist(), 'bias_prev': bias_f2_prev.tolist()})
+
+        data_summary.append({'label': 'o', 'data_origin': matrix_o.tolist(), 'data_prev': matrix_o_prev.tolist(),'weight': weight_o.tolist(), 'weight_prev': weight_o_prev.tolist(), 'bias': bias_o.tolist(), 'bias_prev': bias_o_prev.tolist()})
 
 
     else:

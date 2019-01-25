@@ -146,49 +146,120 @@ function ImagePrediction(o_data){
 
 }
 
-function DrawImageHeatMap(o_data){
+function DrawImageHeatMap2(data){
 
-  $("#HeatMapDiv").empty();
-  var svgWidth = document.getElementById("HeatMapDiv").offsetWidth;
-  var svgHeight = document.getElementById("HeatMapDiv").offsetHeight;
-  var image_svgWidth = document.getElementById("HeatMapDiv").offsetWidth;
-  var image_svgHeight = document.getElementById("HeatMapDiv").offsetHeight;
-  var margin = {top:0, bottom:0, left:0, right:0};
-  var width = +svgWidth- margin.left-margin.right;
-  var height = +svgHeight -margin.top- margin.bottom;
-  var data = ImagePrediction(o_data);
+  var width = 200;
+  var height = 200;
+  var data = data[0];
+  console.log("new",data);
+
+  var canvasLayer = d3.select("#heatmap2");
+
+  var canvas = canvasLayer.node(),
+  context = canvas.getContext("2d");
+  context.clearRect(0,0,width,height);
+  //context.globalAlpha = 0.0001;
+  //console.log(context.globalAlpha);
+  var heat = simpleheat(canvas);
+  //console.log(context.globalAlpha);
   var rows = 28;
   var cols  = 28;
 
-  var colorMap = d3.scaleLinear().domain([d3.min(data),0, d3.max(data)]).range([d3.interpolateRdBu(0),d3.interpolateRdBu(0.5),d3.interpolateRdBu(1)]);
+  var x = d3.scaleLinear().domain([0,cols-1]).range([0,width]).nice();
+  var y = d3.scaleLinear().domain([0,rows-1]).range([height,0]).nice();
+  var maxValue = d3.max(data);
+  var minValue = d3.min(data);
+
+
+  // set data of [[x, y, value], ...] format
+  heat.data(data.map(function(d,i){
+    return [x(i % rows), y(Math.floor(i / rows)), d-minValue];
+  }));
+  //console.log(context.globalAlpha);
+  // set point radius and blur radius (25 and 15 by default)
+  heat.radius(5, 5);
+
+  // optionally customize gradient colors, e.g. below
+  // (would be nicer if d3 color scale worked here)
+
+
+  // console.log(minValue,maxValue);
+
+  // set maximum for domain
+  heat.max(maxValue-minValue);
+
+
+  // draw into canvas, with minimum opacity threshold
+  heat.draw(0.05);
+}
+
+function DrawImageHeatMap(o_data){
+
+  var width = 200;
+  var height = 200;
+  var data = ImagePrediction(o_data);
+  console.log(data);
+
+  var canvasLayer = d3.select("#heatmap");
+
+  var canvas = canvasLayer.node(),
+  context = canvas.getContext("2d");
+  context.clearRect(0,0,width,height);
+  //context.globalAlpha = 0.0001;
+  //console.log(context.globalAlpha);
+  var heat = simpleheat(canvas);
+  //console.log(context.globalAlpha);
+  var rows = 28;
+  var cols  = 28;
 
   var x = d3.scaleLinear().domain([0,cols-1]).range([0,width]).nice();
   var y = d3.scaleLinear().domain([0,rows-1]).range([height,0]).nice();
+  var maxValue = d3.max(data);
+  var minValue = d3.min(data);
+
+
+  // set data of [[x, y, value], ...] format
+  heat.data(data.map(function(d,i){
+    return [x(i % rows), y(Math.floor(i / rows)), d-minValue];
+  }));
+  //console.log(context.globalAlpha);
+  // set point radius and blur radius (25 and 15 by default)
+  heat.radius(5, 5);
+
+  // optionally customize gradient colors, e.g. below
+  // (would be nicer if d3 color scale worked here)
+
+
+  // console.log(minValue,maxValue);
+
+  // set maximum for domain
+  heat.max(maxValue-minValue);
+
+
+  // draw into canvas, with minimum opacity threshold
+  heat.draw(0.05);
+
+  // var colorMap = d3.scaleLinear().domain([d3.min(data),0, d3.max(data)]).range([d3.interpolateRdBu(0),d3.interpolateRdBu(0.5),d3.interpolateRdBu(1)]);
 
 
 
-  var svg = d3.select("#HeatMapDiv")
-              .append("svg")
-              .attr("id","HeatMapSvg")
-              .attr("width", svgWidth)
-              .attr("height", svgHeight)
-              .append("g")
-              .attr("transform","translate("+margin.left+","+margin.top+")");
 
 
-
-  var heats =  svg.selectAll(".heats")
-            .data(data)
-            .enter().append("rect")
-            .attr("class","heats");
+  // var svg = d3.select("#heatmap");
 
 
-  heats.attr("x", function(d,i) { return x(i % rows); })
-        .attr("y", function(d,i) { return y(Math.floor(i / rows)); })
-        .attr("width", width/cols )
-        .attr("height", height/rows)
-        .style("fill",function(d){return colorMap(d);})
-        .style("opacity",0.5);
+  // var heats =  svg.selectAll(".heats")
+  //           .data(data)
+  //           .enter().append("rect")
+  //           .attr("class","heats");
+
+
+  // heats.attr("x", function(d,i) { return x(i % rows); })
+  //       .attr("y", function(d,i) { return y(Math.floor(i / rows)); })
+  //       .attr("width", width/cols )
+  //       .attr("height", height/rows)
+  //       .style("fill",function(d){return colorMap(d);})
+  //       .style("opacity",0.5);
 };
 
 
@@ -211,7 +282,7 @@ function UpdateBarCharts(selectedbar){
     o_data = Array.from({length: 10}, (v, i) => 0);
     o_data[selectedbar]=1;
   }
-
+  console.log(o_data);
   DrawImageHeatMap(o_data);
 
 
@@ -349,42 +420,38 @@ function DrawBarCharts(query_instance_data){
 
 
 
-
-
-
-
 function DrawHiddenLayer(selectedDot)
 {
 
   $("#ImageDiv").empty();
 
-  var svgWidth = document.getElementById("ImageDiv").offsetWidth;
-  var svgHeight = document.getElementById("ImageDiv").offsetHeight;
-  var image_svgWidth = document.getElementById("ImageDiv").offsetWidth;
-  var image_svgHeight = document.getElementById("ImageDiv").offsetHeight;
-  var margin = {top:0, bottom:0, left:0, right:0};
-  var width = +svgWidth- margin.left-margin.right;
-  var height = +svgHeight -margin.top- margin.bottom;
 
-  var svg = d3.select("#ImageDiv")
-              .append("svg")
-              .attr("id","ImageSvg")
-              .attr("width", svgWidth)
-              .attr("height", svgHeight)
-              .append("g")
-              .attr("transform","translate("+margin.left+","+margin.top+")");
+  var width = 200;
+  var height = 200;
 
+  var div = d3.select("#ImageDiv");
 
-  var image_svg = svg.append("svg")
-                        .classed("image",true)
-                        .attr("width",image_svgWidth)
-                        .attr("height",image_svgHeight);
+  var imageLayer = div.append('svg').attr("id","ImageSvg").classed("image",true).attr("width", width).attr("height",height);
+
+  imageLayer.selectAll("image").data([0]).enter().append("svg:image")
+            .attr("xlink:href","static/data/mnist/test-images/"+selectedDot+".png")
+            .attr("width",width)
+            .attr("height",height);
+
+  var canvasLayer = div.append('canvas').attr('id','heatmap').attr("width", width).attr("height",height);
 
 
-  var images = image_svg.selectAll("image").data([0]).enter().append("svg:image")
-                        .attr("xlink:href","static/data/mnist/test-images/"+selectedDot+".png")
-                        .attr("width",image_svgWidth)
-                        .attr("height",image_svgWidth);
+  var div2 = d3.select("#ImageDiv2");
+
+  var imageLayer2 = div2.append('svg').attr("id","ImageSvg2").classed("image",true).attr("width", width).attr("height",height);
+
+  imageLayer2.selectAll("image").data([0]).enter().append("svg:image")
+            .attr("xlink:href","static/data/mnist/test-images/"+selectedDot+".png")
+            .attr("width",width)
+            .attr("height",height);
+
+  var canvasLayer2 = div2.append('canvas').attr('id','heatmap2').attr("width", width).attr("height",height);
+
 
   d3.request("http://0.0.0.0:5000/instance_data")
           .header("X-Requested-With", "XMLHttpRequest")
@@ -392,7 +459,8 @@ function DrawHiddenLayer(selectedDot)
           .post(JSON.stringify([nn_chosen,epoch_chosen,class_chosen,selectedDot]), function(e)
             {
               query_instance_data = JSON.parse(e.response);
-              DrawBarCharts(query_instance_data);
+              DrawBarCharts(query_instance_data.slice(0,3));
+              DrawImageHeatMap2(query_instance_data[3]);
             });
 }
 
@@ -401,11 +469,12 @@ function DrawScatterPlot(query_data)
 {
   $("#SPReset").show();
 
-  var correctness = query_data["correctness"];
+  // var correctness = query_data["correctness"];
   var data_points = query_data["position"];
   var indices = query_data["index"];
-  var correctness_prev =query_data["correctness_prev"];
-  var true_label = query_data["true_label"];
+  // var correctness_prev =query_data["correctness_prev"];
+  // var true_label = query_data["true_label"];
+  var colors = query_data["colorArray"];
 
   d3.select("#ScatterPlotDiv").selectAll("svg").remove();
   d3.select("#ScatterPlotDiv").selectAll("text").remove();
@@ -495,21 +564,24 @@ function DrawScatterPlot(query_data)
         .attr("r", 3)
         .attr("cx", function(d){return x(d[0])})
         .attr("cy",function(d){return y(d[1])})
+        // .style("fill",function(d,i){
+        //   if(correctness[i]==true_label[i]){
+        //     return "steelblue";
+        //   }
+        //   else{
+        //     return "Red";
+        //   }
+        //  })
+        // .style("stroke",function(d,i){
+        //   if(correctness_prev[i] == true_label[i]){
+        //     return "steelblue";
+        //   }
+        //   else{
+        //     return "Red";
+        //   }
+        // })
         .style("fill",function(d,i){
-          if(correctness[i]==true_label[i]){
-            return "steelblue";
-          }
-          else{
-            return "Red";
-          }
-         })
-        .style("stroke",function(d,i){
-          if(correctness_prev[i] == true_label[i]){
-            return "steelblue";
-          }
-          else{
-            return "Red";
-          }
+          return d3.rgb(colors[i][0],colors[i][1],colors[i][2]);
         })
         .style("stroke-width","1")
         .on("mouseover",function(d){
@@ -520,12 +592,13 @@ function DrawScatterPlot(query_data)
           d3.select(this).style("cursor", "default");
           if(indices[i]!=selectedDot){
             d3.select(this).style("fill", function(){
-              if(correctness[i]==true_label[i]){
-                return "steelblue";
-              }
-              else{
-                return "Red";
-              }
+              // if(correctness[i]==true_label[i]){
+              //   return "steelblue";
+              // }
+              // else{
+              //   return "Red";
+              // }
+            return d3.rgb(colors[i][0],colors[i][1],colors[i][2]);
             });
           }
         })
@@ -540,8 +613,9 @@ function DrawScatterPlot(query_data)
           else if(selectedDot != indices[i]){
             selectedDot =indices[i];
             d3.selectAll(".dot").style("fill",function(d,i){
-              if(correctness[i]==true_label[i]){return "steelblue";}
-              else{return "Red";}
+              // if(correctness[i]==true_label[i]){return "steelblue";}
+              // else{return "Red";}
+              return d3.rgb(colors[i][0],colors[i][1],colors[i][2]);
             });
             d3.select(this).style("fill","orange");
 
@@ -698,7 +772,7 @@ function DrawStreamGraph(data_chosen_pre,data_chosen)
           .post(JSON.stringify([nn_chosen,d.key,invertedx]), function(e)
             {
                 query_data = JSON.parse(e.response);
-                console.log(query_data);
+                //console.log(query_data);
 
                 DrawScatterPlot(query_data);
 

@@ -36,9 +36,12 @@ testset = torchvision.datasets.MNIST(root='./data', train=False,
 testloader = torch.utils.data.DataLoader(testset, batch_size=64,
                                          shuffle=False, num_workers=5)
 
-
 testloader_all = torch.utils.data.DataLoader(testset, batch_size=10000,
                                              shuffle=False, num_workers=4)
+
+
+testloader_one = torch.utils.data.DataLoader(testset, batch_size=1,
+                                              shuffle=False, num_workers=1)
 
 classes = ('0', '1', '2', '3','4', '5', '6', '7', '8', '9')
 

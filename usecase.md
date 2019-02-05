@@ -5,7 +5,7 @@ T1 Provide a general summary to entire training process of multiple models
 T2 Provide a visual summary for user-selected instance subset
   T2.1 How are the predictions of the selected instances changing at this epoch?
   T2.2 How are the losses of the selected instances changing at this epoch?
-  T2.3 Which instances that have big prediction at previous epoch before are   predictedcorrectly at this epoch?
+  T2.3 Which instances that have bad prediction at previous epoch before are   predicted correctly at this epoch?
   T2.4 Which instances that have small predictions loss at previous epoch are predicted
        incorrectly at this epoch?
 T3 Provide a visual interpretation of training process in terms of the model structure for

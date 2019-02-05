@@ -10,4 +10,4 @@
 ### 3. Model Diagnosis 
    1. Provide a visual interpretation of training process of the model
    2. Visualize the gradients change of each hidden layer and the original input
-   2. Aggregate the impacts of mutiple instances on the training process
+   2. Aggregate the impacts of mutiple instances on the gadients

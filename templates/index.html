@@ -11,36 +11,64 @@
 <script type="text/javascript">
   var num_of_nn ={{num_of_nn|safe}};
   var num_of_epoch = {{num_of_epoch|safe}};
-  var data = {{data|safe}};
-  // var tsne_data = {{tsne_data|safe}};
+  var classes ={{classes|safe}};
+  var accuracy_data = {{data|safe}};
+
+  var tsne_data = {{tsne_data|safe}};
+
   // var true_label = {{true_label|safe}};
 
 </script>
 <body>
 
   <div class="vis">
-    <div id ='streamgraphdiv' class='frame'>
-    <select id="selectNumber" onchange="changenum()">
+
+    <button type='button' id='streamGraphBtn'>HIDE</button>
+
+    <select id="selectEpoch">
+      <option value = "">Choose a epoch</option>
     </select>
-    <button onclick ="change_view()">RESET</button>
-    </div>
+    <select id="selectEpoch2">
+      <option value = "" >Choose a epoch</option>
+    </select>
+    <button type='button' id='submit' onclick="HiddenLayerSubmit()">Submit</button>
+
     <div id ='ScatterPlotDiv' class='frame'>
+<!--       <button tye ='button' id='BrushClick'>AllowClick</button> -->
       <button id='SPReset'>RESET</button>
     </div>
-    <div id = 'HiddenLayerDiv'>
+
+    <div id = 'combined_div'  class = 'frame'>
+      <div id ='streamgraphdiv'>
+      </div>
+
+
+      <div id = 'HiddenLayerDiv'>
+      </div>
+
+    </div>
+
+    </div>
+      <div id = 'ImagesDiv' class = 'frame'>
+    </div>
+
+
+    <!-- <div id = 'HiddenLayerDiv'>
       <div id = 'ImageDiv' class='frame'>
       </div>
       <div id = 'BarChartDiv' class='frame'>
       </div>
 
-  </div>
+    </div>
 
     <div id = 'HiddenLayerDiv2'>
       <div id = 'ImageDiv2' class='frame'>
       </div>
       <div id = 'BarChartDiv2' class='frame'>
       </div>
-    </div>
+    </div> -->
+
+  </div>
 
 
  <!--    <div id = 'barchart'>
@@ -58,7 +86,8 @@
 <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script type="text/javascript" src="{{url_for('static', filename='js/d3-tip.js')}}"></script>
-<script src ="{{url_for('static', filename='js/vis.js')}}" type="text/javascript"></script>
+<!-- <script src ="{{url_for('static', filename='js/vis.js')}}" type="text/javascript"></script> -->
+<script src ="{{url_for('static', filename='js/vis2.js')}}" type="text/javascript"></script>
 
 
 </html>

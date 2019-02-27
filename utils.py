@@ -11,6 +11,7 @@ from sklearn.metrics import log_loss
 from skimage import color
 import torch.nn as nn
 import torch.nn.functional as F
+from math import *
 
 def stable_softmax(X):
     exps = np.exp(X - np.max(X))
@@ -40,7 +41,7 @@ num_of_epoch = 100
 
 cwd = os.getcwd()
 
-datasetname = 'mnist'
+datasetname = 'fashion-mnist'
 
 images_folder = os.path.join(cwd,'static/data',datasetname,'test-images')
 tsne_position = os.path.join(cwd,'static/data',datasetname,'tsne_position.npy')
@@ -53,40 +54,6 @@ def im_trans(img):
 
 
 
-def Show_output_layer(netname, file_address):
-    if os.path.isfile(os.path.join(file_address,netname)):
-        print(netname + " read from the disk")
-        net = createModel.Net()
-        net.load_state_dict(torch.load(os.path.join(file_address,netname), map_location = 'cpu'))
-    else:
-        print("not trained nn " + netname)
-        return
-
-    ###Show the accuracy
-    correct = 0
-    total = 0
-    class_correct = list(0. for i in range(10))
-    class_total = list(0. for i in range(10))
-    net.eval()
-    with torch.no_grad():
-        for data in createModel.testloader_all:
-            images, labels = data
-            _,_, outputs = net(images)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            c = (predicted == labels).squeeze()
-            for i in range(len(labels)):
-                label = labels[i]
-                class_correct[label] += c[i].item()
-                class_total[label] += 1
-
-    print('Accuracy of the network on the 10000 test images: %d %%' % (
-        100 * correct / total))
-
-    for i in range(10):
-        print('Accuracy of %5s : %2d %%' % (
-            classes[i], 100 * class_correct[i] / class_total[i]))
 
 
 def TSNE_Caculator(data):
@@ -96,42 +63,59 @@ def TSNE_Caculator(data):
 
 
 def dumpImages():
+    images = None
+    labels = None
     for data in createModel.testloader_all:
         images, labels = data
-        for i in range(10000):
-            image = images[i]
-            fig = plt.figure(figsize=(1,1))
-            axes  = fig.add_subplot(1,1,1)
-            image_trans = im_trans(torchvision.utils.make_grid(image))
-            axes.imshow(image_trans)
-            plt.subplots_adjust(left=0,bottom=0 ,right=1, top=1)
-            plt.axis('off')
-            #fig.savefig('{}.png'.format(i))
+        break
+    for i in range(1000):
+        image = images[i]
+        fig = plt.figure(figsize=(1,1))
+        axes  = fig.add_subplot(1,1,1)
+        image_trans = im_trans(torchvision.utils.make_grid(image))
+        axes.imshow(image_trans)
+        plt.subplots_adjust(left=0,bottom=0 ,right=1, top=1)
+        plt.axis('off')
+        #fig.savefig('{}.png'.format(i))
 
-            fig.savefig(os.path.join(images_folder,'{}.png'.format(i)))
-            #fig.close()
-            plt.close()
+        fig.savefig(os.path.join(images_folder,'{}.png'.format(i)))
+        #fig.close()
+        plt.close()
 
 
-def dump_tnse_images():
+def dump_tsne_images():
+    images = None
+    labels=  None
+    results =[]
     for data in createModel.testloader_all:
         images, labels = data
-        images = images.squeeze().numpy().reshape(10000,-1)
-        tsne = TSNE(n_jobs=6,n_components=2)
-        trans_data = tsne.fit_transform(images)
-        np.save('tsne_position',trans_data)
+        break
+    images = images.squeeze().numpy().reshape(1000,-1)
+    labels = labels.numpy()
+    #print(images.shape,labels)
+    tsne = TSNE(n_jobs=6,n_components=2)
+    trans_data = tsne.fit_transform(images)
+    for i in range(len(labels)):
+        results.append({'label': labels[i], 'data':trans_data[i].tolist(), 'index':i})
+    print(results)
+    np.save('tsne_position',results)
+
+    #np.save('tsne_position',trans_data)
+    #np.save()
 
 
-def plot_tnse_images():
-    data = np.load(tsne_position)
-    plt.scatter(data[:,0],data[:,1])
-    plt.show()
+# def plot_tsne_images():
+#     data = np.load(tsne_position)
+#     plt.scatter(data[:,0],data[:,1])
+#     plt.show()
 
 
 def SELoss_Caculator(data,true_label):
 
+
+
     data = np.array(data)
-    true_label = np.array(true_label)
+    #true_label = np.array(true_label)
 
     l = data.shape[0]
 
@@ -143,6 +127,26 @@ def SELoss_Caculator(data,true_label):
         true_label_vectors[i][true_label[i]] = 1
 
     return np.linalg.norm(data-true_label_vectors,axis =1)
+
+
+def log_loss_Caculator(data,true_label):
+    losses = []
+    for i,data_ in enumerate(data):
+        label = true_label[i]
+        result = []
+        for j,d in enumerate(data_):
+            if j == label:
+                result.append(log2(d))
+            else:
+                result.append(log2(1-d))
+        losses.append(np.mean(result)*(-1.0))
+    #print(type(losses))
+    return losses
+
+
+
+
+
 
 
 
@@ -183,30 +187,59 @@ def loadNN(net,nnidx,epoch):
         print(net_name + " is not trained")
 
 
-
 def GradientBackPropogation(nnidx,epoch,index):
 
-    net = createModel.Net()
+    if nnidx <3:
+        net = createModel.initModel('fashion-mnist')
+    else:
+        net = createModel.initModel('fashion-mnist_2')
 
-    optimizer= optim.SGD(net.parameters(), lr=0.00001, momentum=0.3)
+    if nnidx ==1 or nnidx==3:
+        optimizer= optim.SGD(net.parameters(), lr=0.00001, momentum=0.3)
+    else:
+        optimizer= optim.SGD(net.parameters(), lr=0.00005, momentum=0.6)
+
+
     loadNN(net, nnidx, epoch)
 
     input,label = createModel.testset[index]
+
+
+    input = input.unsqueeze_(0)
 
     input.requires_grad_(True)
 
     optimizer.zero_grad()
 
-    _,_,output = net(input)
+    _,_,_,output = net(input)
+
+    #print(output)
+
+    #input.requires_grad_(True)
 
     output = torch.norm(output)
 
     output.backward()
 
+    grad_of_param={}
 
-    a = input.grad.view(-1,28*28).numpy()
+    #print(input.grad.view(-1,28*28).numpy())
 
-    return a
+    for name, parameter in net.named_parameters():
+        grad_of_param[name] = parameter.grad.numpy()
+
+    grad_of_param['input'] = input.grad.view(-1,28*28).numpy()
+
+    return grad_of_param
+
+
+
+
+
+    # a = input.grad.view(-1,28*28).numpy()
+
+    # return a
+
 
 
 
@@ -253,13 +286,14 @@ def GradientBackPropogation(nnidx,epoch,index):
 
 
 if __name__ == '__main__':
-    #dump_tnse_images()
-    #plot_tnse_images()
+    #dumpImages()
+    #dump_tsne_images()
+    #plot_tsne_images()
 
     # cross_entropy(np.array([[1,0,0]]),np.array([[1,0,0]]))
     #print(log_loss([1,1],[[1,0],[0,1]]))
 
-    #print(SELoss_Caculator([[1,0,0],[1,0,0]],[0,2]))
+    #print(log_loss_Caculator([[0.8,0.1,0.1],[0.2,0.3,0.5]],[0,0]))
 
     #print(Loss2RGB([10,2,2,3,2,2,2],[3,5,6,7,8,9,6]))
     GradientBackPropogation(1,1,1)

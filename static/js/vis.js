@@ -11,8 +11,6 @@ var query_data,query_instance_data;
 var data_chosen =  data[nn_chosen]['data'];
 var data_chosen_pre ;
 var x,new_x,y,mousex, invertedx,class_chosen, epoch_chosen, selectedbar;
-//true  if the first is drawn
-var onfirstbarchart = true;
 $("#SPReset").hide();
 
 
@@ -787,11 +785,12 @@ function DrawStreamGraph(data_chosen_pre,data_chosen)
 function changenum(){
     var e = document.getElementById("selectNumber");
     nn_chosen = e.options[e.selectedIndex].value;
-    console.log(nn_chosen)
+    console.log(nn_chosen);
     data_chosen_pre = data_chosen;
     data_chosen =  data[nn_chosen]['data'];
     DrawStreamGraph(data_chosen_pre,data_chosen);
     //onfirstbarchart=true;
+    console.log("draw done");
 }
 
 

@@ -1,7 +1,7 @@
 
 var color= d3.scaleOrdinal(d3.schemeCategory10);
 let scales_stackedbar = {};
-var index_new = [0,1,2,3,4,5,6,7,8,9];
+var index_new = [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9];
 var subBarDrawn = false;
 var allow_click= false;
 var dot_clicked;
@@ -28,20 +28,13 @@ function CreateDropDownlist(id,num){
 function createStreamGraph(){
 
 
-    var div_height = document.getElementById("streamgraphdiv").offsetHeight-100;
+    var div_height = document.getElementById("streamgraphdiv").offsetHeight;
     var div_width =  document.getElementById("streamgraphdiv").offsetWidth;
 
 
     var svgWidth = div_width;
     var svgHeight= div_height / num_of_nn ;
 
-    d3.select('#streamgraphdiv')
-      .append("svg")
-      .attr("id","streamGraphLegend")
-      .attr("width",svgWidth)
-      .attr("height",50);
-
-    DrawLegend();
 
     for (var i=0; i < num_of_nn; i++){
         var modelID = "model"+ (i+1).toString();
@@ -61,19 +54,27 @@ function createStreamGraph(){
 }
 
 function DrawLegend(){
-    var margin = {top:10, bottom:20, left:10, right:10};
-    var bBox = document.getElementById("streamGraphLegend").getBoundingClientRect();
-    var svgWidth = bBox.width;
-    var svgHeight=  bBox.height;
-    var width = +svgWidth- margin.left-margin.right;
-    var height = +svgHeight -margin.top- margin.bottom;
+    var classes = classes_n
+    var div_height = document.getElementById("legend_div").offsetHeight;
+    var div_width = document.getElementById("legend_div").offsetWidth;
+
+    d3.select('#legend_div')
+      .append("svg")
+      .attr("id","SvgLegend")
+      .attr("width",div_width)
+      .attr("height",div_height);
+
+    var margin = {top:5, bottom:5, left:5, right:5};
+    var width = +div_width- margin.left-margin.right;
+    var height = +div_height -margin.top- margin.bottom;
     var offset_x =width/5;
-    var offset_y =height/2+5;
+    var offset_y =height/3+5;
     var legend_clicked = {};
     for(var i =0;i<classes.length;i++){
         legend_clicked[classes[i]] = 0;
     }
-    var svg = d3.select("#streamGraphLegend")
+    //console.log(legend_clicked);
+    var svg = d3.select("#SvgLegend")
                 .append("g")
                 .attr("transform","translate("+margin.left+","+margin.top+")");
 
@@ -171,14 +172,34 @@ function DrawLegend(){
 
     var tooltip = d3.select('#streamgraphdiv').append('div').attr('class', 'hidden tooltip '+modelID);
 
-    function make_button(c_focus,epoch,c,value){
+    function make_button(c_focus,epoch,c1,value1,c2,value2){
         var button;
-        if(c_focus != c){
-            button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' c='${c}' modelid = '${modelID}'> ${c} : ${value.toFixed(4)} </button></td><tr>`;
+        if(c_focus!=c1 && c_focus!=c2){
+            button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' c1='${c1}' c2='${c2}' modelid = '${modelID}'> ${c1} :${value1.toFixed(4)}</br> ${c2} :${value2.toFixed(4)} </button></td></tr>`;
         }
+
+        else if (c_focus==c1){
+            button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' c1='${c1}' c2='${c2}' modelid = '${modelID}'> <font color="red"> ${c1} :${value1.toFixed(4)} </font></br> ${c2} :${value2.toFixed(4)} </button></td></tr>`;
+
+        }
+
         else{
-            button = `<tr><td><button type='button' class="classes_button" style ="color:red" epoch = '${epoch}' c='${c}' modelid='${modelID}'> ${c} : ${value.toFixed(4)} </button></td><tr>`;
+            button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' c1='${c1}' c2='${c2}' modelid = '${modelID}'> ${c1} :${value1.toFixed(4)} </br><font color="red"> ${c2} :${value2.toFixed(4)} </font> </button></td></tr>`;
+
         }
+
+        // if(c_focus != c && i%2==0){
+        //     button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' c='${c}' modelid = '${modelID}'> ${c} : </br> ${value.toFixed(4)} </button></td>`;
+        // }
+        // else if(c_focus != c && i%2==1){
+        //     button = `<td><button type='button' class="classes_button" epoch = '${epoch}' c='${c}' modelid = '${modelID}'> ${c} : </br> ${value.toFixed(4)} </button></td><tr>`;
+        // }
+        // else if (c_focus==c && i%2==0){
+        //     button = `<tr><td><button type='button' class="classes_button" style ="color:red" epoch = '${epoch}' c='${c}' modelid='${modelID}'> ${c} : </br> ${value.toFixed(4)} </button></td>`;
+        // }
+        // else{
+        //     button = `<td><button type='button' class="classes_button" style ="color:red" epoch = '${epoch}' c='${c}' modelid='${modelID}'> ${c} : </br> ${value.toFixed(4)} </button></td><tr>`;
+        // }
         return button;
     }
 
@@ -189,7 +210,8 @@ function DrawLegend(){
         var table = `<div>EPOCH: ${e} <button type ='button' class= "${modelID} x"> X </button>`;
         table += `<table class="tip_table">`;
         for(var i=0 ; i<10; i++){
-            table+= make_button(c_focus,e,classes[i],data[classes[i]]);
+            table+= make_button(c_focus,e,classes[i],data[classes[i]],classes[i+10],data[classes[i+10]]);
+            //table+= make_button(1,c_focus,e,classes[i+10],data[classes[i+10]]);
         }
         table+=`</table></div>`;
         //console.log(table);
@@ -247,7 +269,7 @@ function DrawLegend(){
             return d;
         });
     }
-   // console.log(series);
+   //console.log(series);
 
 
     svg.append("g")
@@ -313,7 +335,7 @@ function DrawLegend(){
             //console.log(data[invertedx-1]);
             tooltip.classed("hidden",false)
                    .attr('style', 'left:' + (d3.event.pageX -320) + 'px; top:' + (d3.event.pageY - 100) + 'px')
-                   .html(tip_show(classes[index_new[d.index]],data[invertedx-1]));
+                   .html(tip_show(classes[d.index],data[invertedx-1]));
         }
         $("."+modelID+".x").click(function(){
             tooltip.classed('hidden',true);
@@ -326,11 +348,11 @@ function DrawLegend(){
             d3.request("http://0.0.0.0:5000/class_data")
               .header("X-Requested-With", "XMLHttpRequest")
               .header("Content-Type", "application/x-www-form-urlencoded")
-              .post(JSON.stringify([$(this).attr('epoch'),$(this).attr('c'),$(this).attr('modelid')]), function(e)
+              .post(JSON.stringify([$(this).attr('epoch'),$(this).attr('c1'),$(this).attr('modelid')]), function(e)
                 {
                     var query_data = JSON.parse(e.response);
                     console.log(query_data);
-                    UpdateScatterPlot($(this).attr('epoch'),$(this).attr('c'),$(this).attr('modelid'),query_data);
+                    UpdateScatterPlot(query_data);
 
                     //DrawScatterPlot(query_data);
 
@@ -400,8 +422,7 @@ function ShowImage(idx_list){
 
 
 
-function UpdateScatterPlot(epoch,c,modelid,query_data){
-    $('#SPSwitch').show();
+function UpdateScatterPlot(query_data){
     var class_indices = query_data['whole_index'];
     var loss_before = query_data['loss_before'];
     var loss_after = query_data['loss_after'];
@@ -612,6 +633,7 @@ function createScatterPlot(data){
 
 
         var brushed_index = d_brushed.map(d=>d.index);
+        console.log(brushed_index);
 
         ShowImage(brushed_index);
 
@@ -634,7 +656,7 @@ function createScatterPlot(data){
                         DrawLossBar(query_data[i].data,modelID);
 
                     }
-                    // console.log(query_data);
+                    console.log(query_data);
                     // UpdateScatterPlot($(this).attr('epoch'),$(this).attr('c'),$(this).attr('modelid'),query_data);
                     //DrawScatterPlot(query_data);
                 });
@@ -746,19 +768,20 @@ function DrawLossBar(data,modelID){
             return d;
         });
     }
-   // console.log(series);
-    svg.selectAll("rect.instances").remove();
+    //console.log(series);
+    svg.selectAll(".sub_bar").remove();
 
     svg.selectAll(".bar").style("fill",function(){return '#808080'}).style('opacity',0.2);
 
     var num_epoch_ = parseInt(x.invert(width-width/num_of_epoch/2) - x.invert(width/num_of_epoch/2));
 
     svg.append("g")
+        .attr("class","sub_bar")
         .selectAll("g")
         .data(series)
         .enter().append("g")
         .attr("class","group_class")
-        .attr("fill", function(d,i){return color(index_new[d.index]);})
+        .attr("fill", function(d,i){return color(index_new[i]);})
         .selectAll("rect")
         .data(function(d){return d;})
         .enter().append("rect")
@@ -812,28 +835,35 @@ function DrawHiddenLayer(data,modelID){
 
     // DrawHeatMap(0);
     // DrawHeatMap(1);
-    DrawConvChart(0,12);
-    DrawConvChart(1,4);
+    DrawConvChart(0,12,2,4);
+    DrawConvChart(1,4,4,10);
     DrawBarChart(2);
     DrawBarChart(3);
 
-    function DrawConvChart(plot_i,rectSize){
+    function DrawConvChart(plot_i,rectSize,col_num,gridSize){
         var data_id = data[plot_i].label;
         var data_origin = data[plot_i].data_origin;
         var data_prev = data[plot_i].data_prev;
         var plot_data = data_origin.map(function(d,i){return d - data_prev[i];});
 
-        //console.log(plot_data);
+        min = d3.extent(plot_data)[0];
+        max = d3.extent(plot_data)[1];
 
-        var color = d3.scaleLinear().domain(d3.extent(plot_data)).range(["white", "black"]);
+        var max_abs = Math.max(Math.abs(min),Math.abs(max));
+        var min_abs = max_abs*(-1.0);
 
-        var row_size = rectSize*2;
+        var color = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
 
-        var height_size = plot_data.length/row_size;
+        //var color = d3.scaleLinear().domain(d3.extent(plot_data)).range(["white", "black"]);
 
-        var gridSizex = Math.floor(width/row_size);
+        var row_size = rectSize*col_num+1;
 
-        var gridSizey = Math.floor(height/height_size);
+        var height_size = plot_data.length/rectSize*col_num+ (plot_data.length/(rectSize*col_num))/rectSize-1;
+
+
+        // var gridSize = 4;
+        console.log(row_size,height_size,gridSize);
+
 
         var svg = d3.select('#'+modelID)
             .append("svg")
@@ -858,10 +888,21 @@ function DrawHiddenLayer(data,modelID){
                             .enter().append("rect")
                             .attr("class",data_id);
 
-        conv_rects.attr("x",function(d,i){return (i%row_size)*gridSizex;})
-                  .attr("y",function(d,i){return Math.floor(i/row_size) * gridSizey;})
-                  .attr("width",gridSizex)
-                  .attr("height",gridSizey)
+
+        conv_rects.attr("x",function(d,i){
+                    var index_rect = Math.floor(i/(rectSize**2));
+                    var col_in_rect = (i%(rectSize**2))%rectSize;
+                    var col_index = index_rect%col_num;
+                    return (col_index)*(rectSize+1)*gridSize +col_in_rect*gridSize;
+                    })
+                  .attr("y",function(d,i){
+                    var index_rect = Math.floor(i/(rectSize**2));
+                    var row_in_rect = Math.floor((i%(rectSize**2))/rectSize);
+                    var row_index = Math.floor(index_rect/col_num);
+                    return (row_index)*(rectSize+1)*gridSize + row_in_rect*gridSize;
+                    })
+                  .attr("width",gridSize)
+                  .attr("height",gridSize)
                   .style("fill",function(d,i){return color(d);});
 
 
@@ -994,6 +1035,7 @@ function sortArrayByAbs(test){
 
 $(document).ready(function(){
     createStreamGraph();
+    DrawLegend();
     onClickShow('streamGraphBtn','ScatterPlotdiv',"SHOW","HIDE");
     createScatterPlot(tsne_data);
     CreateDropDownlist('selectEpoch',num_of_epoch);

@@ -31,6 +31,14 @@ num_of_nn  = 2
 
 classes = createModel.classes
 
+classes_pos_neg  = []
+
+for c in classes:
+    classes_pos_neg.append(c+'(+)')
+for c in classes:
+    classes_pos_neg.append(c+'(-)')
+
+#print(classes_pos_neg)
 
 true_label = [createModel.testset[i][1].numpy().tolist() for i in range(1000)]
 # print(true_label)
@@ -89,37 +97,33 @@ def Training_process_data():
     return data_matrices
 
 
-def Loss_Data_Change():
-    data_matrices = []
-    for epoch in range(0, num_of_epoch+1):
-        accuracy_data = []
-        losses= []
-        for nn in range(1,num_of_nn+1):
-            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
+# def Loss_Data_Change():
+#     data_matrices = []
+#     for epoch in range(0, num_of_epoch+1):
+#         accuracy_data = []
+#         losses= []
+#         for nn in range(1,num_of_nn+1):
+#             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
 
-        #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
-            losses.append(last_layer_data)
+#         #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
+#             losses.append(last_layer_data)
 
-        #shape:num_of_nn X num_of_input X 10
-        losses = np.array(losses)
-        #print(losses.shape)
-        sort_losses = losses[:,sort_index]
-        #print(sort_losses.shape)
+#         #shape:num_of_nn X num_of_input X 10
+#         losses = np.array(losses)
+#         #print(losses.shape)
+#         sort_losses = losses[:,sort_index]
+#         #print(sort_losses.shape)
 
-        losses_sum = [utils.log_loss_Caculator(sort_losses[i],sort_true_label) for i in range(sort_losses.shape[0]) ]
+#         losses_sum = [utils.log_loss_Caculator(sort_losses[i],sort_true_label) for i in range(sort_losses.shape[0]) ]
 
-        losses_sum = np.array(losses_sum)
-        #print(losses_sum.shape)
+#         losses_sum = np.array(losses_sum)
+#         #print(losses_sum.shape)
 
-        loss_classes = np.array([np.sum(losses_sum[:,bin_counts[i]:bin_counts[i+1]],axis =1 ) for i in range(10)])
+#         loss_classes = np.array([np.sum(losses_sum[:,bin_counts[i]:bin_counts[i+1]],axis =1 ) for i in range(10)])
 
-        #print(loss_classes.shape)
+#         data_matrices.append(np.transpose(loss_classes,(1,0)) )
 
-
-        data_matrices.append(np.transpose(loss_classes,(1,0)) )
-   # print(data_matrices)
-
-    return data_matrices
+#     return data_matrices
 
 
 
@@ -185,13 +189,13 @@ def dumpLosses():
 #     accuracy_data = np.array(Training_process_data()) #shape: num_of_epoch X number_of_nn X num_of_classes
 #     accuracy_data = np.transpose(accuracy_data,(1,0,2)) #shape: num_of_nn X number_of_epoch X num_of_classes
 #     np.save(os.path.join(cwd,'static/data',datasetname,'accuracy_data.npy'),accuracy_data)
-loss_data = None
-if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'loss_data.npy')):
-    loss_data = np.load(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'))
-else:
-    loss_data = np.array(Loss_Data_Change()) #shape: num_of_epoch X number_of_nn X num_of_classes
-    loss_data = np.transpose(loss_data,(1,0,2)) #shape: num_of_nn X number_of_epoch X num_of_classes
-    np.save(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'),loss_data)
+# loss_data = None
+# if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'loss_data.npy')):
+#     loss_data = np.load(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'))
+# else:
+#     loss_data = np.array(Loss_Data_Change()) #shape: num_of_epoch X number_of_nn X num_of_classes*2
+#     loss_data = np.transpose(loss_data,(1,0,2)) #shape: num_of_nn X number_of_epoch X num_of_classes*2
+#     np.save(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'),loss_data)
 
 
 tsne_data = None
@@ -222,76 +226,92 @@ else:
 
 
 
-def jsonifydata(origin_data):
-    data_result = []
-    # average_result = []
+# def jsonifydata(origin_data):
 
-    def jsonifyactualdata(data):
-        data_new =[]
-        for i,d in enumerate(data):
-            data_new.append({'epoch': i+1})
-            for j,v in enumerate(d):
-                class_name = classes[j]
-                #data_new[i][class_name] = max(0.0,v)#for streamgraph
-                data_new[i][class_name] = v#for stacked bar chart
-        return data_new
+#     data_result = []
+#     # average_result = []
+
+#     def jsonifyactualdata(data):
+#         data_new =[]
+#         for i,d in enumerate(data):
+#             data_new.append({'epoch': i+1})
+#             for j,v in enumerate(d):
+#                 class_name = classes_pos_neg[j]
+#                 #data_new[i][class_name] = max(0.0,v)#for streamgraph
+#                 data_new[i][class_name] = v#for stacked bar chart
+#         return data_new
 
 
+#     for nn_index in range(num_of_nn):
+#         origin_data_nn = origin_data[nn_index]
+#         diff_data_nn = np.diff(origin_data_nn,axis=0) #shape: num_epoch X number_of_classes
+#         print(diff_data_nn.shape)
+#         # average_result.append(diff_data_nn)
+#         pass_data = jsonifyactualdata(diff_data_nn)
+#         data_result.append({"nn_index": nn_index+1, "data": pass_data})
+
+#     # average_result = np.array(average_result)
+#     # average_result = np.mean(average_result,axis = 0)
+#     # data_result.insert(0,{"nn_index": 0, "data": jsonifyactualdata(average_result)})
+#     #print(data_result[100])
+#     return data_result
+
+def Loss_Difference_Summary(input_data,bin_counts,sort_index):
+    def classifydata(data):
+        data_json = []
+        for i,instances in enumerate(data):
+            data_json.append({'epoch':i+1})
+            pos_loss_classes = [np.sum(instances[bin_counts[i]:bin_counts[i+1]].clip(min=0)) for i in range(10)]
+            neg_loss_classes = [np.sum(instances[bin_counts[i]:bin_counts[i+1]].clip(max=0)) for i in range(10)]
+            loss_classes = pos_loss_classes+neg_loss_classes
+            for j,v in enumerate(loss_classes):
+                class_name = classes_pos_neg[j]
+                data_json[i][class_name] = v
+        return data_json
+
+
+    #shape of losses_instance_data: num_of_instances X number_of_nn X num_of_epoch+1
+    diff_data = np.diff(input_data, axis=2) #shape: num_of_instances X number_of_nn X num_of_epoch
+    data_result =[]
+    diff_data = np.transpose(diff_data,(1,2,0)) #shape: number_of_nn X num_of_epoch X num_of_instances
+    diff_data = diff_data[:,:,sort_index]
     for nn_index in range(num_of_nn):
-        origin_data_nn = origin_data[nn_index]
-        diff_data_nn = np.diff(origin_data_nn,axis=0) #shape: num_epoch X number_of_classes
-        print(diff_data_nn.shape)
-        # average_result.append(diff_data_nn)
-        pass_data = jsonifyactualdata(diff_data_nn)
+        diff_data_nn = diff_data[nn_index] #shape : num_of_epoch X num_of_instance
+        pass_data = classifydata(diff_data_nn)
         data_result.append({"nn_index": nn_index+1, "data": pass_data})
 
-    # average_result = np.array(average_result)
-    # average_result = np.mean(average_result,axis = 0)
-    # data_result.insert(0,{"nn_index": 0, "data": jsonifyactualdata(average_result)})
-    #print(data_result[100])
     return data_result
+
+
+
+
+
 
 
 @app.route('/', methods = ["GET", "POST"])
 def index():
-    data = jsonifydata(loss_data)
-    #dg.data_full_layer_vectors(1, 100)
-    #tsne_data = np.load(tsne_file).tolist()
-    # return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, tsne_data = tsne_data, true_label = true_label.tolist())
-#print(type(tsne_data.tolist()))
-    #print(type(data))
-    return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes), tsne_data= tsne_data.tolist())
+    data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
+    #data = jsonifydata(loss_data)
+    return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes))
 
 
 @app.route('/class_data', methods =["GET", "POST"])
 @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def get_class_data():
     epoch_idx,class_name,modelid = json.loads(request.get_data())
+    class_name = class_name[:-3]
     class_idx = classes.index(class_name)
     model_idx = int(modelid[5:])
     epoch_idx = int(epoch_idx)
-    selected_index = sort_index[bin_counts[class_idx]:bin_counts[class_idx+1]]
     print('epoch:',epoch_idx,'class:',class_name,'class_idx:',class_idx,'model_idx:',model_idx)
-    #print(seltecte)
-
-    # predicts_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx)))[1]
-    # predicts_data_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx-1)))[1]
-    #print(last_layer_data.shape,last_layer_data_prev.shape,predicts_data.shape,predicts_data_prev.shape)
-
-        #this is the index which is predicted different from the true class previously  or currently
-    # diff_indx=[]
-    # for indx in selected_index:
-    #     if (predicts_data[indx] == class_idx and predicts_data_prev[indx] != class_idx) or (predicts_data[indx] != class_idx and predicts_data_prev[indx] == class_idx):
-    #         diff_indx.append(int(indx))
-
-    #print(last_layer_data_prev[diff_indx],last_layer_data[diff_indx],np.array(true_label)[diff_indx])
+    selected_index = sort_index[bin_counts[class_idx]:bin_counts[class_idx+1]]
 
 
     #shape of losses_instance_data: num_of_instances X number_of_nn X num_of_epoch
 
-    print(losses_instance_data.shape)
+    #print(losses_instance_data.shape)
 
-    print(losses_instance_data[selected_index].shape)
+    #print(losses_instance_data[selected_index].shape)
 
     loss_after = losses_instance_data[selected_index][:,model_idx-1,epoch_idx]
 
@@ -312,8 +332,10 @@ def get_accuracy_data():
     brushed_index  = json.loads(request.get_data())
     print(brushed_index)
 
+    input_data = losses_instance_data[brushed_index]
 
-    overall_data = np.transpose(losses_instance_data[brushed_index],(1,2,0)) #shape: nn X epoch X instances
+
+    # overall_data = np.transpose(losses_instance_data[brushed_index],(1,2,0)) #shape: nn X epoch X instances
 
     sub_true_label = np.array(true_label)[brushed_index]
 
@@ -326,48 +348,34 @@ def get_accuracy_data():
     sort_index = np.argsort(sub_true_label)
 
     sub_bin_counts = np.insert(np.cumsum(label_counts),0,0).astype(int)
-    print(bin_counts)
-
-    sort_losses =overall_data[:,:,sort_index]
-
-    results = []
-    for nn in range(num_of_nn):
-        data1  = overall_data[nn] #shape: epoch X instances
-        data = []
-        for e in range(1,num_of_epoch+1):
-            data_class = {}
-            data_class['epoch'] = e
-            for i,c in enumerate(classes):
-                if label_counts[i]!=0:
-                    #print(sort_predict_label[nn][e],bin_counts[i], bin_counts[i+1])
-                    sum_after = np.sum(sort_losses[nn][e][sub_bin_counts[i]:sub_bin_counts[i+1]])
-                    sum_prev = np.sum(sort_losses[nn][e-1][sub_bin_counts[i]:sub_bin_counts[i+1]])
-                    data_class[c] = (sum_after - sum_prev)
-                else:
-                    data_class[c] = 0
-            data.append(data_class)
-        results.append({'nn_index':nn+1, 'data': data})
-    #print(results)
-
-    return jsonify(results)
 
 
+    loss_data_sub = Loss_Difference_Summary(input_data,sub_bin_counts,sort_index)
 
+    return jsonify(loss_data_sub)
 
+    # sort_losses =overall_data[:,:,sort_index]
 
+    # results = []
+    # for nn in range(num_of_nn):
+    #     data1  = overall_data[nn] #shape: epoch X instances
+    #     data = []
+    #     for e in range(1,num_of_epoch+1):
+    #         data_class = {}
+    #         data_class['epoch'] = e
+    #         for i,c in enumerate(classes):
+    #             if label_counts[i]!=0:
+    #                 #print(sort_predict_label[nn][e],bin_counts[i], bin_counts[i+1])
+    #                 sum_after = np.sum(sort_losses[nn][e][sub_bin_counts[i]:sub_bin_counts[i+1]])
+    #                 sum_prev = np.sum(sort_losses[nn][e-1][sub_bin_counts[i]:sub_bin_counts[i+1]])
+    #                 data_class[c] = (sum_after - sum_prev)
+    #             else:
+    #                 data_class[c] = 0
+    #         data.append(data_class)
+    #     results.append({'nn_index':nn+1, 'data': data})
+    # #print(results)
 
-
-
-
-    # sum_corrects = np.sum(np.transpose(predictions_data[brushed_index],(1,2,0)), axis= 2) / len(brushed_index)
-
-    # correctes_diff =np.concatenate((sum_corrects[:,0].reshape(1,-1).T,np.diff(sum_corrects,axis =1)),axis=1)
-
-
-    # return jsonify(correctes_diff.tolist())
-
-
-
+    # return jsonify(results)
 
 
 @app.route('/data', methods =["GET", "POST"])
@@ -422,7 +430,7 @@ def get_image_data():
     epoch1_chosen,epoch2_chosen,selectedDot = json.loads(request.get_data())
     epochs.append(int(epoch1_chosen))
     epochs.append(int(epoch2_chosen))
-    print('epoch for model 1: ',epochs[0],"epoch for model 2 " ,epochs[1], "Index:", selectedDot)
+    print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot)
 
     for i,nn_chosen in enumerate(range(1,3)):
 
@@ -448,7 +456,7 @@ def get_image_data():
 
         matrix_o = data_file[0]['o'][selectedDot]
 
-        #print(sum(matrix_o))
+        print(data_file[0]['c1'][selectedDot].shape)
 
         matrix_c1 = data_file[0]['c1'][selectedDot].flatten()
 

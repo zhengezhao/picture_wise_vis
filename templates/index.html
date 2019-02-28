@@ -15,6 +15,7 @@
   var accuracy_data = {{data|safe}};
 
   var tsne_data = {{tsne_data|safe}};
+  var classes_n = {{classes_n|safe}};
 
   // var true_label = {{true_label|safe}};
 
@@ -24,6 +25,9 @@
   <div class="vis">
 
     <button type='button' id='streamGraphBtn'>HIDE</button>
+
+    <div id ="legend_div" class='frame'>
+    </div>
 
     <select id="selectEpoch">
       <option value = "">Choose a epoch</option>
@@ -48,33 +52,13 @@
 
     </div>
 
-    </div>
       <div id = 'ImagesDiv' class = 'frame'>
     </div>
 
 
-    <!-- <div id = 'HiddenLayerDiv'>
-      <div id = 'ImageDiv' class='frame'>
-      </div>
-      <div id = 'BarChartDiv' class='frame'>
-      </div>
-
-    </div>
-
-    <div id = 'HiddenLayerDiv2'>
-      <div id = 'ImageDiv2' class='frame'>
-      </div>
-      <div id = 'BarChartDiv2' class='frame'>
-      </div>
-    </div> -->
-
   </div>
 
 
- <!--    <div id = 'barchart'>
-  </div>
-      <div id = 'barchart2'>
-  </div> -->
 </body>
 <script type="text/javascript" src="{{url_for('static', filename='js/simpleheat.js')}}"></script>
 <script type="text/javascript" src="{{url_for('static', filename='js/math.min.js')}}"></script>

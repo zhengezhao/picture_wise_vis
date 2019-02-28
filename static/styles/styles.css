@@ -1,7 +1,7 @@
 .vis{
   position: absolute;
   left:10px;
-  top: 20px;
+  top: 50px;
   pointer-events: all;
   cursor: move;
   fill: none;
@@ -112,7 +112,7 @@ div.tooltip {
 }
 
 #ImagesDiv{
-  position: relative;
+  position: absolute;
   top:450px;
   width:350px;
   height:350px;
@@ -155,13 +155,6 @@ div.tooltip {
 }*/
 
 
-#BarChartDiv{
-  position: absolute;
-  width: 1100px;
-  height: 500px;
-  top: 0px;
-  left: 250px;
-}
 
 .zoom {
   cursor: move;
@@ -190,16 +183,6 @@ div.tooltip {
   top: 300px;
   left: 0px;
 }*/
-
-
-#BarChartDiv2{
-  position: absolute;
-  width: 1100px;
-  height: 400px;
-  top: 0px;
-  left: 250px;
-}
-
 
 
 
@@ -245,5 +228,16 @@ div.tooltip {
   position: absolute;
   top:0px;
   left:1140px;
+
+}
+
+
+#legend_div{
+  position: absolute;
+  left:365px;
+  top: -45px;
+  width:500px;
+  height :60px;
+
 
 }

@@ -926,14 +926,14 @@ function DrawHiddenLayer(data,modelID){
         var data_prev = data[plot_i].data_prev;
         var plot_data = data_origin.map(function(d,i){return d-data_prev[i];});
         var plot_data_index = Array.apply(null, {length: plot_data.length}).map(Number.call, Number);
-        // plot_data = sortArrayByAbs(plot_data)[0];
-        // plot_data_index = sortArrayByAbs(plot_data)[1];
 
-        // if(plot_data.length >20){
-        //     plot_data = plot_data.slice(0,20);
-        //     plot_data_index = plot_data_index.slice(0,20);
-        // }
+        min = d3.extent(plot_data)[0];
+        max = d3.extent(plot_data)[1];
 
+        var max_abs = Math.max(Math.abs(min),Math.abs(max));
+        var min_abs = max_abs*(-1.0);
+
+        var color = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
 
         var svg = d3.select('#'+modelID)
                 .append("svg")
@@ -982,7 +982,7 @@ function DrawHiddenLayer(data,modelID){
           .attr("y", function(d,i) { return y(i); })
           .attr("width", function(d) { return Math.abs(x(d) - x(0)); })
           .attr("height", y.bandwidth())
-          .style("fill",function(d){return (d<0 ? "darkorange":"steelblue");});
+          .style("fill",function(d){return color(d);});
 
     }
 

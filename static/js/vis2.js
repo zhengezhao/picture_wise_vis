@@ -415,7 +415,22 @@ function ShowImage(idx_list){
             .attr("width",width/row)
             .attr("height",height/row)
             .attr("x",function(d,i){return x(i%row);})
-            .attr("y", function(d,i){return y(Math.floor(i/row));});
+            .attr("y", function(d,i){return y(Math.floor(i/row));})
+            .on("click",function(d,i){
+                if(dot_clicked==null || dot_clicked!=d){
+                    dot_clicked = d;
+                    console.log()
+                    d3.selectAll(".image").classed("unselectedImage",true);
+                    d3.select(this).classed("unselectedImage",false);
+                    d3.selectAll(".dot").classed("selectedDot",function(k,j){console.log(k);return (k.index==d)?true:false});
+                }
+                else{
+                    dot_clicked=null;
+                    d3.selectAll(".image").classed("unselectedImage",false);
+                    d3.selectAll(".dot").classed("selectedDot",false);
+
+                }
+            });
     }
 
 }

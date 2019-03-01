@@ -238,6 +238,11 @@ div.tooltip {
   top: -45px;
   width:500px;
   height :60px;
-
-
 }
+
+.unselectedImage{
+  opacity: 0.2;
+}
+
+
+

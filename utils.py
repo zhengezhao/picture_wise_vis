@@ -187,50 +187,86 @@ def loadNN(net,nnidx,epoch):
         print(net_name + " is not trained")
 
 
-def GradientBackPropogation(nnidx,epoch,index):
+def GradientBackPropogation(nnidx,epoch,index,label_index=None):
 
     if nnidx <3:
         net = createModel.initModel('fashion-mnist')
     else:
         net = createModel.initModel('fashion-mnist_2')
 
-    if nnidx ==1 or nnidx==3:
-        optimizer= optim.SGD(net.parameters(), lr=0.00001, momentum=0.3)
-    else:
-        optimizer= optim.SGD(net.parameters(), lr=0.00005, momentum=0.6)
+    # if nnidx ==1 or nnidx==3:
+    #     optimizer= optim.SGD(net.parameters(), lr=0.00001, momentum=0.3)
+    # else:
+    #     optimizer= optim.SGD(net.parameters(), lr=0.00005, momentum=0.6)
 
 
     loadNN(net, nnidx, epoch)
+    net.eval()
 
     input,label = createModel.testset[index]
+
+    #print(input,label)
+
+
 
 
     input = input.unsqueeze_(0)
 
     input.requires_grad_(True)
 
-    optimizer.zero_grad()
+    net.zero_grad()
 
-    _,_,_,output = net(input)
+    c1,c2,f1,output = net(input)
 
+    #print(input)
+
+
+    #print(c1.detach().numpy())
+
+    #c1= c1.unsqueeze_(0)
+
+    # c1.requires_grad_(True)
+
+    #print(c1)
     #print(output)
 
-    #input.requires_grad_(True)
 
-    output = torch.norm(output)
+    #input.requires_grad_(True)
+    if label_index is not None:
+        for i in range(10):
+            if i not in label_index:
+                output[0][i] = 0
+
+    output= torch.norm(output[0])
+    #print(output)
 
     output.backward()
+
+    #print(c1.detach().numpy())
+    #print(c1.grad)
 
     grad_of_param={}
 
     #print(input.grad.view(-1,28*28).numpy())
 
-    for name, parameter in net.named_parameters():
-        grad_of_param[name] = parameter.grad.numpy()
+    # for name, parameter in net.named_parameters():
+    #     grad_of_param[name] = parameter.grad.numpy()
 
-    grad_of_param['input'] = input.grad.view(-1,28*28).numpy()
+    grad_of_param['input'] = input.grad.view(-1,28*28).numpy().flatten()
+
+    input_new = input- input.grad
+
+    net.zero_grad()
+
+    c1_new,c2_new,f1_new,_ = net(input_new)
+
+    grad_of_param['c1'] = c1_new.detach().numpy().flatten() - c1.detach().numpy().flatten()
+    grad_of_param['c2'] = c2_new.detach().numpy().flatten() - c2.detach().numpy().flatten()
+    grad_of_param['f1'] = f1_new.detach().numpy().flatten() - f1.detach().numpy().flatten()
+
 
     return grad_of_param
+
 
 
 
@@ -296,5 +332,21 @@ if __name__ == '__main__':
     #print(log_loss_Caculator([[0.8,0.1,0.1],[0.2,0.3,0.5]],[0,0]))
 
     #print(Loss2RGB([10,2,2,3,2,2,2],[3,5,6,7,8,9,6]))
-    GradientBackPropogation(1,1,1)
+    a = GradientBackPropogation(1,4,1,0)
+
+    # print(a['input'].flatten().shape, a['c1'].flatten().shape, a['c2'].shape, a['f1'].shape)
+
+    #b= GradientBackPropogation(1,3,1,0)['input']
+
+    # print(b)
+    # print(a)
+
+
+
+    # plt.imshow((a-b).reshape(28,28))
+    # plt.colorbar()
+    # plt.show()
+
+
+
     #test()

@@ -91,7 +91,7 @@ div.tooltip {
 
 #streamgraphdiv{
   position: absolute;
-  width: 500px;
+  width: 450px;
   height: 600px;
   left: 0px;
 }
@@ -106,9 +106,9 @@ div.tooltip {
 }
 #HiddenLayerDiv{
   position: absolute;
-  width: 900px;
+  width: 950px;
   height : 600px;
-  left: 500px;
+  left: 450px;
 }
 
 #ImagesDiv{
@@ -138,7 +138,7 @@ div.tooltip {
   position: absolute;
   top: 375px;
   left: 30px;
-}å
+}
 
 #BrushClick{
   position: absolute;
@@ -165,7 +165,7 @@ div.tooltip {
 .tick line {
   stroke: lightgrey;
   stroke-opacity: 0.7;
-  shape-rendering: crispEdges
+  shape-rendering: crispEdges;
 
 }
 
@@ -173,7 +173,18 @@ div.tooltip {
   cursor: pointer;
 }
 
+.axisLine {
+  stroke: lightgrey;
+  stroke-opacity: 0.7;
+  shape-rendering: crispEdges;
 
+}
+
+.AxisLine{
+  stroke: black;
+  stroke-opacity: 1.0;
+  shape-rendering: crispEdges;
+}
 
 
 /*#HeatMapDiv{
@@ -196,8 +207,7 @@ div.tooltip {
 }
 
 .dot{
-  stroke: black;
-  stroke-width: 0.2px;
+  stroke: none;
 }
 
 .selectedDot{
@@ -210,6 +220,20 @@ div.tooltip {
     stroke-width: 0.5px;
 }
 */
+.query_dot{
+  stroke:none;
+}
+
+
+
+.selectedQueryDot{
+  stroke: black;
+  stroke-width: 1px;
+}
+
+
+
+
 #selectEpoch{
   position: absolute;
   top:0px;
@@ -236,7 +260,7 @@ div.tooltip {
   position: absolute;
   left:365px;
   top: -45px;
-  width:500px;
+  width:450px;
   height :60px;
 }
 
@@ -244,5 +268,25 @@ div.tooltip {
   opacity: 0.2;
 }
 
+#slider-epoch{
+  position: absolute;
+  left:365px;
+  top:650px;
+  width: 900px;
+  height:100px;
+}
 
+#imageSvg{
+  position: absolute;
+  top:200px;
+}
 
+#heatmap1{
+  position: absolute;
+  top: 60px;
+}
+
+#heatmap2{
+  position: absolute;
+  top:340px;
+}

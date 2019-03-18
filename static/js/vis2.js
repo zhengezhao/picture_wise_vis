@@ -9,6 +9,11 @@ var isBrushing = false;
 var scales_hiddenLayerbar={};
 var labels=["input","c1","c2","f1","o"];
 var doubleClicked=[null,null];
+var legend_clicked = {};
+for(var i =0;i<classes_n.length;i++){
+    legend_clicked[classes_n[i]] = 0;
+}
+
 
 
 
@@ -73,10 +78,6 @@ function DrawLegend(){
     var height = +div_height -margin.top- margin.bottom;
     var offset_x =width/5;
     var offset_y =height/3+5;
-    var legend_clicked = {};
-    for(var i =0;i<classes.length;i++){
-        legend_clicked[classes[i]] = 0;
-    }
     //console.log(legend_clicked);
     var svg = d3.select("#SvgLegend")
                 .append("g")
@@ -113,25 +114,50 @@ function DrawLegend(){
         })
         .on("mouseover",function(d,i){
             d3.select(this).style("cursor", "pointer");
-            legend.select("rect")
-                  .style("opacity",function(k,j){return legend_clicked[classes[j]]==1||i==j ? 1:0.2});
+                legend.select("rect").style("opacity",function(k,j){return legend_clicked[classes[j]]==1||i==j ? 1:0.2});
 
-            d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1||i==index_new[k.index]? 1:0.2});
-            d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1||i==k.label?false:true;});
+            if(subBarDrawn==false){
+                d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1||i==index_new[k.index]? 1:0.2});
+                d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1||i==k.label?false:true;});
+            }
+            else{
+
+                d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1||i==k.label?false:true});
+                d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1||i==index_new[k.index]? 1:0.2});
+
+
+            }
                // d3.select(this).style("fill",function(){return color(i)});
         })
         .on("mouseout",function(){
             if(IsDicZeros(legend_clicked)){
                 //gray out all the others
-                legend.selectAll("rect").style("opacity",1);
-                d3.selectAll(".bar").style("opacity",1);
-                d3.selectAll(".dot").classed("unSelectedDot",false);
+                if(subBarDrawn==false){
+                    legend.selectAll("rect").style("opacity",1);
+                    d3.selectAll(".bar").style("opacity",1);
+                    d3.selectAll(".dot").classed("unSelectedDot",false);
+                }
+                else{
+                    legend.selectAll("rect").style("opacity",1);
+                    d3.selectAll(".dot.brushed").classed("unSelectedDot",false);
+                    d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",1);
+
+                }
             }
             else{
+                if(subBarDrawn==false){
                 //`console.log(this);
-                d3.select(this).style("opacity",function(k){return legend_clicked[k]==1?1:0.2});
-                d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
-                d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+                    d3.select(this).style("opacity",function(k){return legend_clicked[k]==1?1:0.2});
+                    d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
+                    d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+                }
+                else{
+                    d3.select(this).style("opacity",function(k){return legend_clicked[k]==1?1:0.2});
+                    d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+                    d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
+
+
+                }
             }
         })
         .on("click",function(d,i){
@@ -146,11 +172,21 @@ function DrawLegend(){
             }
             //UpdateStackedBar(legend_clicked);
             //For the scatterplot
-            d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+            if(subBarDrawn==false){
+                d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
 
-            //console.log(legend_clicked);
+                //console.log(legend_clicked);
 
-            d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1?1:0.2});
+                d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1?1:0.2});
+            }
+            else{
+                d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes[tsne_data[k].label]]==1?false:true});
+                d3.selectAll(".dot:not(.brushed)").classed("unSelectedDot",true);
+                d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+                d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
+
+            }
+
         });
 
     legend.append('text')
@@ -409,9 +445,16 @@ function ShowImage(idx_list){
                    // DrawSlider(dot_clicked);
                 }
                 else{
-                    dot_clicked=null;
-                    svg.selectAll(".image").classed("unselectedImage",false);
-                    d3.selectAll(".dot").classed("selectedDot",false);
+                    if(subBarDrawn==false){
+                        dot_clicked=null;
+                        svg.selectAll(".image").classed("unselectedImage",false);
+                        d3.selectAll(".dot").classed("selectedDot",false);
+                    }
+                    else{
+                        dot_clicked=null;
+                        d3.selectAll(".dot").classed("selectedDot",false);
+                        svg.selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes_n[tsne_data[k].label]]==1?false:true});
+                    }
 
                 }
                 DrawSliders(dot_clicked);
@@ -798,6 +841,11 @@ function createScatterPlot(data){
         subBarDrawn= false;
         $("#ImagesDiv").empty();
         isBrushing = false;
+        for(var i =0;i<classes_n.length;i++){
+            legend_clicked[classes_n[i]] = 0;
+        }
+        d3.select("#SvgLegend").selectAll("rect").classed('selected_legend',false).style("opacity",1);
+
 
     }
 

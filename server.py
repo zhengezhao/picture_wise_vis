@@ -27,7 +27,8 @@ cwd = os.getcwd()
 datasetname = 'fashion-mnist'
 
 num_of_epoch  =100
-num_of_nn  = 2
+num_of_nn  = [5,6]
+
 
 classes = createModel.classes
 
@@ -53,121 +54,13 @@ bin_counts = np.insert(np.cumsum(np.bincount(true_label)) ,0,0)
 sort_true_label = np.sort(true_label)
 sort_index = np.argsort(true_label)
 
-#print(bin_counts)
-#Training_process_Comprision module starts###################################################
-# The purposes of this module is as follows:
-# 1. We obervsed the sudden jumping of accuracy for some classes, we want to know of this is
-#    a common case for each of the 100 nns
-# 2. If it happens in other nns, do they happen at the same epoch?
-# 3. If we set up a threshold for the accuracy, what is the order of the classes being trained?
-#     Isn't the same order for all the nns?
 
-##########################################################################################
-####data generate function################################################################
-##output: a accuracy over all epochs of all nns , SHAPE: EPOCH X NN X LABEL_CLASS
-def Training_process_data():
-    data_matrices = []
-
-
-    for epoch in range(1, num_of_epoch+1):
-        accuracy_data = []
-        predict_label = []
-        for nn in range(1,num_of_nn+1):
-            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]
-
-        #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
-            predict_label.append(last_layer_data)
-
-        #shape:num_of_nn X num_of_input
-        predict_label =np.array(predict_label)
-        #print(predict_label.shape)
-        sort_predict_label = predict_label[:,sort_index]
-        #print(sort_predict_label.shape)
-
-        corrects = [ sort_predict_label[i]==sort_true_label for i in range(predict_label.shape[0]) ]
-        corrects = np.array(corrects)
-        #print(corrects)
-        corrects_classes = np.array([np.sum(corrects[:,bin_counts[i]:bin_counts[i+1]],axis =1 )/(bin_counts[i+1]-bin_counts[i]) for i in range(10)])
-
-        #print(corrects_classes.shape)
-
-
-        data_matrices.append(np.transpose(corrects_classes,(1,0)) )
-        #print(data_matrices)
-
-    return data_matrices
-
-
-# def Loss_Data_Change():
-#     data_matrices = []
-#     for epoch in range(0, num_of_epoch+1):
-#         accuracy_data = []
-#         losses= []
-#         for nn in range(1,num_of_nn+1):
-#             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
-
-#         #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
-#             losses.append(last_layer_data)
-
-#         #shape:num_of_nn X num_of_input X 10
-#         losses = np.array(losses)
-#         #print(losses.shape)
-#         sort_losses = losses[:,sort_index]
-#         #print(sort_losses.shape)
-
-#         losses_sum = [utils.log_loss_Caculator(sort_losses[i],sort_true_label) for i in range(sort_losses.shape[0]) ]
-
-#         losses_sum = np.array(losses_sum)
-#         #print(losses_sum.shape)
-
-#         loss_classes = np.array([np.sum(losses_sum[:,bin_counts[i]:bin_counts[i+1]],axis =1 ) for i in range(10)])
-
-#         data_matrices.append(np.transpose(loss_classes,(1,0)) )
-
-#     return data_matrices
-
-
-
-
-def TSNE_Caculator():
-    TSNE_data = []
-    for epoch in range(1, num_of_epoch+1):
-        TSNE_epoch_data = []
-        for nn in range(1,num_of_nn+1):
-            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
-            tsne = TSNE(n_components=2)
-            print("tNSE")
-            trans_data = tsne.fit_transform(last_layer_data)
-            print(trans_data.shape)
-            TSNE_epoch_data.append(trans_data.tolist())
-        TSNE_data.append(TSNE_epoch_data)
-
-    return TSNE_data
-
-
-def dumpPredictions():
-    predictions = []
-    for epoch in range(1, num_of_epoch+1):
-        predict_label = []
-        for nn in range(1,num_of_nn+1):
-            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]
-            predict_label.append(last_layer_data)
-
-        #shape:num_of_nn X num_of_input
-        predict_label =np.array(predict_label)
-        #print(predict_label.shape)
-        corrects = [ predict_label[i]==np.array(true_label) for i in range(predict_label.shape[0]) ]
-        predictions.append(corrects)
-    predictions = np.array(predictions)
-    predictions = np.transpose(predictions,(2,1,0))  #shape: num_of_instances X number_of_nn X num_of_epoch
-    print(predictions.shape)
-    return predictions
 
 def dumpLosses():
     losses = []
     for epoch in range(0, num_of_epoch+1):
         outputs_epoch = []
-        for nn in range(1,num_of_nn+1):
+        for nn in num_of_nn:
             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
             outputs_epoch.append(last_layer_data)
 
@@ -181,22 +74,6 @@ def dumpLosses():
     print(losses.shape)
     return losses
 
-
-# #print("Here before")
-# accuracy_data=None
-# if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'accuracy_data.npy')):
-#     accuracy_data = np.load(os.path.join(cwd,'static/data',datasetname,'accuracy_data.npy'))
-# else:
-#     accuracy_data = np.array(Training_process_data()) #shape: num_of_epoch X number_of_nn X num_of_classes
-#     accuracy_data = np.transpose(accuracy_data,(1,0,2)) #shape: num_of_nn X number_of_epoch X num_of_classes
-#     np.save(os.path.join(cwd,'static/data',datasetname,'accuracy_data.npy'),accuracy_data)
-# loss_data = None
-# if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'loss_data.npy')):
-#     loss_data = np.load(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'))
-# else:
-#     loss_data = np.array(Loss_Data_Change()) #shape: num_of_epoch X number_of_nn X num_of_classes*2
-#     loss_data = np.transpose(loss_data,(1,0,2)) #shape: num_of_nn X number_of_epoch X num_of_classes*2
-#     np.save(os.path.join(cwd,'static/data',datasetname,'loss_data.npy'),loss_data)
 
 
 tsne_data = None
@@ -214,48 +91,6 @@ else:
     np.save(os.path.join(cwd,'static/data',datasetname,'losses_instance_data.npy'),losses_instance_data)
 
 
-predictions_data = None
-if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy')):
-    predictions_data = np.load(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy'))
-else:
-    predictions_data  = dumpPredictions()
-    np.save(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy'),predictions_data)
-
-
-    # tsne_data =TSNE_Caculator()
-    # np.save(os.path.join(cwd,'static/data',datasetname,'tsne_data.npy'), tsne_data)
-
-
-
-# def jsonifydata(origin_data):
-
-#     data_result = []
-#     # average_result = []
-
-#     def jsonifyactualdata(data):
-#         data_new =[]
-#         for i,d in enumerate(data):
-#             data_new.append({'epoch': i+1})
-#             for j,v in enumerate(d):
-#                 class_name = classes_pos_neg[j]
-#                 #data_new[i][class_name] = max(0.0,v)#for streamgraph
-#                 data_new[i][class_name] = v#for stacked bar chart
-#         return data_new
-
-
-#     for nn_index in range(num_of_nn):
-#         origin_data_nn = origin_data[nn_index]
-#         diff_data_nn = np.diff(origin_data_nn,axis=0) #shape: num_epoch X number_of_classes
-#         print(diff_data_nn.shape)
-#         # average_result.append(diff_data_nn)
-#         pass_data = jsonifyactualdata(diff_data_nn)
-#         data_result.append({"nn_index": nn_index+1, "data": pass_data})
-
-#     # average_result = np.array(average_result)
-#     # average_result = np.mean(average_result,axis = 0)
-#     # data_result.insert(0,{"nn_index": 0, "data": jsonifyactualdata(average_result)})
-#     #print(data_result[100])
-#     return data_result
 
 def Loss_Difference_Summary(input_data,bin_counts,sort_index):
     def classifydata(data):
@@ -276,15 +111,11 @@ def Loss_Difference_Summary(input_data,bin_counts,sort_index):
     data_result =[]
     diff_data = np.transpose(diff_data,(1,2,0)) #shape: number_of_nn X num_of_epoch X num_of_instances
     diff_data = diff_data[:,:,sort_index]
-    for nn_index in range(num_of_nn):
+    for nn_index in range(len(num_of_nn)):
         diff_data_nn = diff_data[nn_index] #shape : num_of_epoch X num_of_instance
         pass_data = classifydata(diff_data_nn)
-        data_result.append({"nn_index": nn_index+1, "data": pass_data})
-
+        data_result.append({"nn_index": num_of_nn[nn_index], "data": pass_data})
     return data_result
-
-
-
 
 
 
@@ -293,7 +124,7 @@ def Loss_Difference_Summary(input_data,bin_counts,sort_index):
 def index():
     data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
     #data = jsonifydata(loss_data)
-    return render_template('index.html', data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes))
+    return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist())
 
 
 @app.route('/class_data', methods =["GET", "POST"])
@@ -368,7 +199,7 @@ def get_image_data():
     epochs.append(int(epoch2_chosen))
     print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot)
 
-    for i,nn_chosen in enumerate(range(1,3)):
+    for i,nn_chosen in enumerate(num_of_nn):
 
         data_s  =[]
 
@@ -463,9 +294,9 @@ def searh_instance_data():
     print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot,"Layer: ", layer_id)
 
 
-    NN_data_1,sort_indices_1,NN_distances_1 = SearchActiviationDiff(1,epochs[0],layer_id,selectedDot)
+    NN_data_1,sort_indices_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
 
-    NN_data_2,sort_indices_2,NN_distances_2 = SearchActiviationDiff(2,epochs[1],layer_id,selectedDot)
+    NN_data_2,sort_indices_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
 
 
     data_points=set([])
@@ -535,9 +366,6 @@ def grad_data():
             gradcam_diff.append({'label':label,'data':(matrix - matrix_prev).tolist()})
 
 
-
-
-
     else:
         gradcam_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot,labels)
 
@@ -546,9 +374,7 @@ def grad_data():
 
         for name in gradcam.keys():
             diff =  gradcam[name] - gradcam_prev[name]
-            gradcam_diff.append({'label':name,'data':(gradcam[name] - gradcam_prev[name]).tolist()})
-
-
+            gradcam_diff.append({'label':name,'data':diff.tolist()})
 
 
     return jsonify(gradcam_diff)
@@ -685,3 +511,96 @@ if __name__ == '__main__':
 
 #         # points_summary = {'position': tsne_result, 'correctness': corrects, 'correctness_prev': corrects_prev, 'index': selected_index.tolist(), 'true_label': true_labels}
 #         return jsonify(points_summary)
+
+
+
+#print(bin_counts)
+#Training_process_Comprision module starts###################################################
+# The purposes of this module is as follows:
+# 1. We obervsed the sudden jumping of accuracy for some classes, we want to know of this is
+#    a common case for each of the 100 nns
+# 2. If it happens in other nns, do they happen at the same epoch?
+# 3. If we set up a threshold for the accuracy, what is the order of the classes being trained?
+#     Isn't the same order for all the nns?
+
+##########################################################################################
+####data generate function################################################################
+##output: a accuracy over all epochs of all nns , SHAPE: EPOCH X NN X LABEL_CLASS
+# def Training_process_data():
+#     data_matrices = []
+
+
+#     for epoch in range(1, num_of_epoch+1):
+#         accuracy_data = []
+#         predict_label = []
+#         for nn in range(1,num_of_nn+1):
+#             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]
+
+#         #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
+#             predict_label.append(last_layer_data)
+
+#         #shape:num_of_nn X num_of_input
+#         predict_label =np.array(predict_label)
+#         #print(predict_label.shape)
+#         sort_predict_label = predict_label[:,sort_index]
+#         #print(sort_predict_label.shape)
+
+#         corrects = [ sort_predict_label[i]==sort_true_label for i in range(predict_label.shape[0]) ]
+#         corrects = np.array(corrects)
+#         #print(corrects)
+#         corrects_classes = np.array([np.sum(corrects[:,bin_counts[i]:bin_counts[i+1]],axis =1 )/(bin_counts[i+1]-bin_counts[i]) for i in range(10)])
+
+#         #print(corrects_classes.shape)
+
+
+#         data_matrices.append(np.transpose(corrects_classes,(1,0)) )
+#         #print(data_matrices)
+
+#     return data_matrices
+
+
+# def Loss_Data_Change():
+#     data_matrices = []
+#     for epoch in range(0, num_of_epoch+1):
+#         accuracy_data = []
+#         losses= []
+#         for nn in range(1,num_of_nn+1):
+#             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
+
+#         #predict_label = np.load(os.path.join(data_path,'predict_label_epoch{}.npy'.format(epoch)))
+#             losses.append(last_layer_data)
+
+#         #shape:num_of_nn X num_of_input X 10
+#         losses = np.array(losses)
+#         #print(losses.shape)
+#         sort_losses = losses[:,sort_index]
+#         #print(sort_losses.shape)
+
+#         losses_sum = [utils.log_loss_Caculator(sort_losses[i],sort_true_label) for i in range(sort_losses.shape[0]) ]
+
+#         losses_sum = np.array(losses_sum)
+#         #print(losses_sum.shape)
+
+#         loss_classes = np.array([np.sum(losses_sum[:,bin_counts[i]:bin_counts[i+1]],axis =1 ) for i in range(10)])
+
+#         data_matrices.append(np.transpose(loss_classes,(1,0)) )
+
+#     return data_matrices
+
+
+
+
+# def TSNE_Caculator():
+#     TSNE_data = []
+#     for epoch in range(1, num_of_epoch+1):
+#         TSNE_epoch_data = []
+#         for nn in range(1,num_of_nn+1):
+#             last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
+#             tsne = TSNE(n_components=2)
+#             print("tNSE")
+#             trans_data = tsne.fit_transform(last_layer_data)
+#             print(trans_data.shape)
+#             TSNE_epoch_data.append(trans_data.tolist())
+#         TSNE_data.append(TSNE_epoch_data)
+
+#     return TSNE_data

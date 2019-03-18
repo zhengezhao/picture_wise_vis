@@ -106,6 +106,9 @@ def TrainNN(net, net_name, lr = None , momentum=None):
 
     else:
 
+        net_name_epoch = net_name+'_epoch0'
+        torch.save(net.state_dict(), os.path.join(model_path,net_name_epoch))
+
     # train the network
         for epoch in range(num_of_epoch):
 
@@ -229,10 +232,17 @@ if __name__ == '__main__':
     # net_name_epoch = 'net_2_epoch0'
     # torch.save(net.state_dict(), os.path.join(model_path,net_name_epoch))
 
-    Show_output_layer(model_path,'fashion-mnist','net_1_epoch1')
-    Show_output_layer(model_path,'fashion-mnist','net_2_epoch1')
-    Show_output_layer(model_path,'fashion-mnist_2','net_3_epoch1')
-    Show_output_layer(model_path,'fashion-mnist_2','net_4_epoch1')
+    # Show_output_layer(model_path,'fashion-mnist','net_1_epoch1')
+    # Show_output_layer(model_path,'fashion-mnist','net_2_epoch1')
+    # Show_output_layer(model_path,'fashion-mnist_2','net_3_epoch1')
+    # Show_output_layer(model_path,'fashion-mnist_2','net_4_epoch1')
+
+    net = initModel('fashion-mnist')
+
+    TrainNN(net, 'net_6', lr = 0.00001, momentum=0.3)
+
+
+
 
 
 

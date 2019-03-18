@@ -17,6 +17,12 @@ def stable_softmax(X):
     exps = np.exp(X - np.max(X))
     return exps / np.sum(exps)
 
+def softmax(x):
+    ex = np.exp(x)
+    sum_ex = np.sum( np.exp(x))
+    return ex/sum_ex
+
+
 def cross_entropy(X,y):
     """
     X is a vector
@@ -132,6 +138,7 @@ def SELoss_Caculator(data,true_label):
 def log_loss_Caculator(data,true_label):
     losses = []
     for i,data_ in enumerate(data):
+        data_ = softmax(data_)
         label = true_label[i]
         result = []
         for j,d in enumerate(data_):
@@ -189,26 +196,17 @@ def loadNN(net,nnidx,epoch):
 
 def GradientBackPropogation(nnidx,epoch,index,label_index=None):
 
-    if nnidx <3:
+
+    if nnidx <3 or nnidx>4:
         net = createModel.initModel('fashion-mnist')
     else:
         net = createModel.initModel('fashion-mnist_2')
-
-    # if nnidx ==1 or nnidx==3:
-    #     optimizer= optim.SGD(net.parameters(), lr=0.00001, momentum=0.3)
-    # else:
-    #     optimizer= optim.SGD(net.parameters(), lr=0.00005, momentum=0.6)
 
 
     loadNN(net, nnidx, epoch)
     net.eval()
 
     input,label = createModel.testset[index]
-
-    #print(input,label)
-
-
-
 
     input = input.unsqueeze_(0)
 
@@ -218,58 +216,49 @@ def GradientBackPropogation(nnidx,epoch,index,label_index=None):
 
     c1,c2,f1,output = net(input)
 
-    #print(input)
-
-
-    #print(c1.detach().numpy())
-
-    #c1= c1.unsqueeze_(0)
-
-    # c1.requires_grad_(True)
-
-    #print(c1)
-    #print(output)
-
-
-    #input.requires_grad_(True)
     if label_index is not None:
         for i in range(10):
             if i not in label_index:
                 output[0][i] = 0
 
+    print(output)
+
     output= torch.norm(output[0])
-    #print(output)
+    # #print(output)
 
     output.backward()
 
-    #print(c1.detach().numpy())
-    #print(c1.grad)
 
     grad_of_param={}
 
-    #print(input.grad.view(-1,28*28).numpy())
-
-    # for name, parameter in net.named_parameters():
-    #     grad_of_param[name] = parameter.grad.numpy()
-
-    grad_of_param['input'] = input.grad.view(-1,28*28).numpy().flatten()
-
-    input_new = input- input.grad
-
-    net.zero_grad()
-
-    c1_new,c2_new,f1_new,_ = net(input_new)
-
-    grad_of_param['c1'] = c1_new.detach().numpy().flatten() - c1.detach().numpy().flatten()
-    grad_of_param['c2'] = c2_new.detach().numpy().flatten() - c2.detach().numpy().flatten()
-    grad_of_param['f1'] = f1_new.detach().numpy().flatten() - f1.detach().numpy().flatten()
-
+    grad_of_param['input'] = input.grad.numpy().flatten()
+    grad_of_param['c1'] = c1.grad.numpy().flatten()
+    grad_of_param['c2'] = c2.grad.numpy().flatten()
+    grad_of_param['f1'] = f1.grad.numpy().flatten()
 
     return grad_of_param
 
 
 
 
+
+def dumpPredictions():
+    predictions = []
+    for epoch in range(1, num_of_epoch+1):
+        predict_label = []
+        for nn in range(1,num_of_nn+1):
+            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]
+            predict_label.append(last_layer_data)
+
+        #shape:num_of_nn X num_of_input
+        predict_label =np.array(predict_label)
+        #print(predict_label.shape)
+        corrects = [ predict_label[i]==np.array(true_label) for i in range(predict_label.shape[0]) ]
+        predictions.append(corrects)
+    predictions = np.array(predictions)
+    predictions = np.transpose(predictions,(2,1,0))  #shape: num_of_instances X number_of_nn X num_of_epoch
+    print(predictions.shape)
+    return predictions
 
 
     # a = input.grad.view(-1,28*28).numpy()
@@ -332,7 +321,7 @@ if __name__ == '__main__':
     #print(log_loss_Caculator([[0.8,0.1,0.1],[0.2,0.3,0.5]],[0,0]))
 
     #print(Loss2RGB([10,2,2,3,2,2,2],[3,5,6,7,8,9,6]))
-    a = GradientBackPropogation(1,4,1,0)
+    a = GradientBackPropogation(1,4,1)
 
     # print(a['input'].flatten().shape, a['c1'].flatten().shape, a['c2'].shape, a['f1'].shape)
 

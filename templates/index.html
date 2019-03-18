@@ -17,6 +17,8 @@
   var tsne_data = {{tsne_data|safe}};
   var classes_n = {{classes_n|safe}};
 
+  var loss_diff_data = {{loss_diff_data|safe}}
+
   // var true_label = {{true_label|safe}};
 
 </script>
@@ -29,13 +31,6 @@
     <div id ="legend_div" class='frame'>
     </div>
 
-    <select id="selectEpoch">
-      <option value = "">Choose a epoch</option>
-    </select>
-    <select id="selectEpoch2">
-      <option value = "" >Choose a epoch</option>
-    </select>
-    <button type='button' id='submit' onclick="HiddenLayerSubmit()">Submit</button>
 
     <div id ='ScatterPlotDiv' class='frame'>
 <!--       <button tye ='button' id='BrushClick'>AllowClick</button> -->
@@ -55,9 +50,9 @@
       <div id = 'ImagesDiv' class = 'frame'>
     </div>
 
- <!--   <div id="slider-epoch" class="frame"></div>
+   <div id="slider-epoch" class="frame"></div>
 
- -->
+
   </div>
 
 

@@ -61,8 +61,8 @@ def data_full_layer_vectors(modelname,nn_idx, epoch):
             c1,c2,f1,outputs = net(images)  ##outputs shape : number_of_inputs X 10
             _,predicted = torch.max(outputs,1)
             #print(outputs.shape)
-            m = nn.Softmax(dim=1)
-            outputs = m(outputs)
+            # m = nn.Softmax(dim=1)
+            # outputs = m(outputs)
             matrix  ={'c1':c1.numpy(), 'c2': c2.numpy(), 'f1': f1.numpy(), 'o': outputs.numpy()}
             predicts = predicted.numpy()
             # weights = {'f1': net.fc1[0].weight.detach().numpy(),'f2': net.fc2[0].weight.detach().numpy(), 'o': net.fc3[0].weight.detach().numpy()}
@@ -84,13 +84,17 @@ def data_full_layer_vectors(modelname,nn_idx, epoch):
 
 
 if __name__ == '__main__':
-    data_full_layer_vectors('fashion-mnist',1, 0)
-    data_full_layer_vectors('fashion-mnist',2, 0)
-    data_full_layer_vectors('fashion-mnist_2',3, 0)
-    data_full_layer_vectors('fashion-mnist_2',4, 0)
-    # for i in range(num_of_nn
+    # data_full_layer_vectors('fashion-mnist',1, 0)
+    # data_full_layer_vectors('fashion-mnist',2, 0)
+    # data_full_layer_vectors('fashion-mnist_2',3, 0)
+    # data_full_layer_vectors('fashion-mnist_2',4, 0)
+    # for i in [3,4]:
     #     for j in range(num_of_epoch):
-    #         data_full_layer_vectors(i+1, j+1)
+    #         data_full_layer_vectors('fashion-mnist_2',i, j+1)
+
+    for i in [5,6]:
+        for j in range(num_of_epoch+1):
+            data_full_layer_vectors('fashion-mnist',i, j)
 
 
 

@@ -27,10 +27,13 @@ class Net(nn.Module):
     def forward(self, x):
         out = self.conv1(x)
         c1 = out
+        c1.retain_grad()
         out = self.conv2(out)
         c2= out
+        c2.retain_grad()
         out = out.view(out.size(0), -1)
         out = self.fc1(out)
         f1 = out
+        f1.retain_grad()
         out = self.fc2(out)
         return c1,c2,f1,out

@@ -8,6 +8,7 @@ var dot_clicked;
 var isBrushing = false;
 var scales_hiddenLayerbar={};
 var labels=["input","c1","c2","f1","o"];
+var doubleClicked=[null,null];
 
 
 
@@ -36,11 +37,11 @@ function createStreamGraph(){
 
 
     var svgWidth = div_width;
-    var svgHeight= div_height / num_of_nn ;
+    var svgHeight= div_height / num_of_nn.length ;
 
 
-    for (var i=0; i < num_of_nn; i++){
-        var modelID = "model"+ (i+1).toString();
+    for (var i=0; i < num_of_nn.length; i++){
+        var modelID = "model"+ (num_of_nn[i]).toString();
 
         d3.select("#streamgraphdiv")
           .append("svg")
@@ -362,13 +363,6 @@ function DrawLegend(){
     .on('click',function(){if(subBarDrawn==false){
         clicked=true;
         console.log("clicked");
-        var epoch =data[invertedx-1].epoch;
-        if(modelID == "model1"){
-            $('#selectEpoch').val(epoch).change();
-        }
-        else{
-            $('#selectEpoch2').val(epoch).change();
-        }
 
     }});
 
@@ -420,10 +414,132 @@ function ShowImage(idx_list){
                     d3.selectAll(".dot").classed("selectedDot",false);
 
                 }
+                DrawSliders(dot_clicked);
             });
     }
 
 }
+
+function DrawSliders(dot_clicked){
+
+    var div = d3.select("#slider-epoch");
+    var svgHeight = document.getElementById("slider-epoch").offsetHeight/2;
+    var svgWidth =  document.getElementById("slider-epoch").offsetWidth;
+    var margin = {top:10, bottom:20, left:30, right:10};
+    var width = +svgWidth- margin.left-margin.right;
+    var height = +svgHeight -margin.top- margin.bottom;
+    $("#slider-epoch").empty();
+
+    if(dot_clicked==null){return}
+
+    var data = loss_diff_data[dot_clicked];
+
+    var x = d3.scaleLinear().domain([0, 100]).range([0, width]);
+
+    for (var i =0;i<num_of_nn.length;i++){
+
+        DrawSlider(i);
+
+
+    }
+
+    function DrawSlider(i){
+        var svg  = div.append("svg").attr("width",svgWidth).attr("height",svgHeight).attr("id","loss_bar_model"+num_of_nn[i].toString()).append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+
+
+
+        var y = d3.scaleLinear().domain(d3.extent(data[i])).range([height,0]);
+
+        // 7. d3's line generator
+        var line = d3.line()
+            .x(function(d, j) { return x(j); }) // set the x values for the line generator
+            .y(function(d) { return y(d); }) // set the y values for the line generator
+            .curve(d3.curveMonotoneX); // apply smoothing to the line
+
+        var yAxis = d3.axisLeft(y).ticks(5);
+
+        var xAxis = d3.axisBottom(x).ticks(20).tickSize(2);
+
+        // 3. Call the x axis in a group tag
+        svg.append("g")
+            .attr("class", "x line_axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis); // Create an axis component with d3.axisBottom
+
+
+        // 4. Call the y axis in a group tag
+        svg.append("g")
+            .attr("class", "y line_axis")
+            .call(yAxis); // Create an axis component with d3.axisLeft
+
+        // 9. Append the path, bind the data, and call the line generator
+        svg.append("path")
+            .datum(data[i]) // 10. Binds data to the line
+            .attr("class", "loss_line") // Assign a class for styling
+            .attr("d", line);
+
+        // 12. Appends a circle for each datapoint
+        svg.selectAll(".dot")
+            .data(data[i].slice(1))
+            .enter().append("circle") // Uses the enter().append() method
+            .attr("class", "loss_dot") // Assign a class for styling
+            .attr("cx", function(d, j) { return x(j+1) })
+            .attr("cy", function(d) { return y(d) })
+            .attr("r", 2);
+
+        var rect_cover = svg.append("rect").attr("width",width).attr("height",height);
+
+        rect_cover.on("mouseover",function(){
+                d3.select(this).style("cursor", "pointer");
+            })
+            .on("click",function(){
+                var mousex = d3.mouse(this)[0];
+                var invertedx = Math.round(x.invert(mousex));
+                if(invertedx!=0)
+                {
+                    console.log(invertedx);
+                    svg.selectAll(".selectedLine").remove();
+                    svg.append("line").classed("selectedLine",true)
+                       .attr("x1",x(invertedx))
+                       .attr("y1",0)
+                       .attr("x2",x(invertedx))
+                       .attr("y2",height);
+
+                    svg.selectAll(".text_loss").remove();
+                    svg.append("text")
+                        .classed("text_loss",true)
+                        .attr("x",width-220)
+                        .attr("y",2)
+                        .style("fill","black")
+                        .text("Epoch: "+(invertedx-1).toString()+" ~ " +invertedx.toString()+" Loss_Change: "+(data[i][invertedx]- data[i][invertedx-1]).toFixed(4));
+
+                    doubleClicked[i] = invertedx;
+
+                    if(doubleClicked[0]!=null && doubleClicked[1]!=null){
+                        if (dot_clicked==null){return}
+
+                        d3.request("http://0.0.0.0:5000/instance_data")
+                                  .header("X-Requested-With", "XMLHttpRequest")
+                                  .header("Content-Type", "application/x-www-form-urlencoded")
+                                  .post(JSON.stringify([doubleClicked[0],doubleClicked[1],dot_clicked]), function(e)
+                                    {
+                                        var query_data = JSON.parse(e.response);
+                                        console.log(query_data);
+                                        DrawHiddenLayerDiv(query_data,dot_clicked);
+                                    });
+
+                    }
+
+
+
+
+
+                }
+            });
+    }
+
+}
+
 
 
 
@@ -655,8 +771,8 @@ function createScatterPlot(data){
 
                     //console.log(query_data);
 
-                    for (var i=0; i < num_of_nn; i++){
-                        var modelID = "model"+ (i+1).toString();
+                    for (var i=0; i < num_of_nn.length; i++){
+                        var modelID = "model"+ (num_of_nn[i]).toString();
 
                         DrawLossBar(query_data[i].data,modelID);
 
@@ -813,7 +929,7 @@ function DrawHiddenLayerDiv(data,dot_clicked){
 
 
     var svgWidth = div_width;
-    var svgHeight= (div_height-labelHeight) / num_of_nn ;
+    var svgHeight= (div_height-labelHeight) / num_of_nn.length ;
     var label_clicked= false;
 
 
@@ -904,8 +1020,8 @@ function DrawHiddenLayerDiv(data,dot_clicked){
 
 
 
-    for (var i=0; i < num_of_nn; i++){
-        var modelID = "hiddenlayer_model"+ (i+1).toString();
+    for (var i=0; i < num_of_nn.length; i++){
+        var modelID = "hiddenlayer_model"+ (num_of_nn[i]).toString();
 
         d3.select("#HiddenLayerDiv")
           .append("div")
@@ -982,11 +1098,11 @@ function DrawHiddenLayer(data,modelID){
 
         var svg;
 
-        if(data_id=="input" && modelID=="hiddenlayer_model1"){
+        if(data_id=="input" && modelID=="hiddenlayer_model5"){
             svg = d3.select('#input_image').select("#heatmap1_g");
 
         }
-        else if(data_id=="input" && modelID=="hiddenlayer_model2"){
+        else if(data_id=="input" && modelID=="hiddenlayer_model6"){
             svg = d3.select('#input_image').select("#heatmap2_g");
         }
         else{
@@ -1117,14 +1233,13 @@ function DrawHiddenLayer(data,modelID){
 
 
 function UpdateHiddenCharts(modelID,label_clicked){
-    var e;
-    if(modelID =="hiddenlayer_model1"){
-        e=document.getElementById("selectEpoch");
+    var epoch_chosen;
+    if(modelID =="hiddenlayer_model5"){
+        epoch_chosen=doubleClicked[0];
     }
     else{
-        e= document.getElementById("selectEpoch2");
+        epoch_chosen=doubleClicked[1];
     }
-    var epoch_chosen = e.options[e.selectedIndex].value;
 
     if (epoch_chosen==""  || dot_clicked==null){return}
 
@@ -1233,11 +1348,8 @@ function UpdateBarChart(modelID,data){
 
 function DrawSearchHiddenLayer(data_id,dot_clicked){
 
-        var e1 = document.getElementById("selectEpoch");
-        var e2 = document.getElementById("selectEpoch2");
-
-        var epoch_chosen = e1.options[e1.selectedIndex].value;
-        var epoch2_chosen = e2.options[e2.selectedIndex].value;
+        var epoch_chosen = doubleClicked[0];
+        var epoch2_chosen = doubleClicked[1];
 
         if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
 
@@ -1430,7 +1542,7 @@ function DrawHiddenLayer_Query(data_id,data){
     var svgWidth = (document.getElementById("HiddenLayerDiv").offsetWidth*0.6-svgHeight)/2;
     var width = +svgWidth- margin.left-margin.right;
     var height = +svgHeight -margin.top- margin.bottom;
-    var modelID_list =["hiddenlayer_model1","hiddenlayer_model2"];
+    var modelID_list =["hiddenlayer_model5","hiddenlayer_model6"];
     //console.log(data);
     //console.log(data_id,data);
     // d3.select('#'+modelID).selectAll(".QueryHiddenLayer").remove();
@@ -1573,34 +1685,6 @@ function DrawHiddenLayer_Query(data_id,data){
 
 
 
-function HiddenLayerSubmit(){
-    var e1 = document.getElementById("selectEpoch");
-    var e2 = document.getElementById("selectEpoch2");
-
-    var epoch_chosen = e1.options[e1.selectedIndex].value;
-    var epoch2_chosen = e2.options[e2.selectedIndex].value;
-    console.log(epoch_chosen,epoch2_chosen,dot_clicked);
-
-    if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
-
-    d3.request("http://0.0.0.0:5000/instance_data")
-              .header("X-Requested-With", "XMLHttpRequest")
-              .header("Content-Type", "application/x-www-form-urlencoded")
-              .post(JSON.stringify([epoch_chosen,epoch2_chosen,dot_clicked]), function(e)
-                {
-                    var query_data = JSON.parse(e.response);
-                    console.log(query_data);
-                    DrawHiddenLayerDiv(query_data,dot_clicked);
-                });
-}
-
-function DrawSlider(dot_clicked){
-
-}
-
-
-
-
 
 //sort an array by its abs value
 function sortArrayByAbs(test){
@@ -1629,10 +1713,33 @@ $(document).ready(function(){
     DrawLegend();
     onClickShow('streamGraphBtn','ScatterPlotdiv',"SHOW","HIDE");
     createScatterPlot(tsne_data);
-    CreateDropDownlist('selectEpoch',num_of_epoch);
-    CreateDropDownlist('selectEpoch2',num_of_epoch);
+    // CreateDropDownlist('selectEpoch',num_of_epoch);
+    // CreateDropDownlist('selectEpoch2',num_of_epoch);
 
 });
+
+
+function HiddenLayerSubmit(){
+    var e1 = document.getElementById("selectEpoch");
+    var e2 = document.getElementById("selectEpoch2");
+
+    var epoch_chosen = e1.options[e1.selectedIndex].value;
+    var epoch2_chosen = e2.options[e2.selectedIndex].value;
+    console.log(epoch_chosen,epoch2_chosen,dot_clicked);
+
+    if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
+
+    d3.request("http://0.0.0.0:5000/instance_data")
+              .header("X-Requested-With", "XMLHttpRequest")
+              .header("Content-Type", "application/x-www-form-urlencoded")
+              .post(JSON.stringify([epoch_chosen,epoch2_chosen,dot_clicked]), function(e)
+                {
+                    var query_data = JSON.parse(e.response);
+                    console.log(query_data);
+                    DrawHiddenLayerDiv(query_data,dot_clicked);
+                });
+}
+
 
 
 
@@ -1839,9 +1946,9 @@ function UpdateStackedBar(legend_clicked){
                    .offset(d3.stackOffsetDiverging);
 
 
-    for (var i=0; i < num_of_nn; i++){
+    for (var i=0; i < num_of_nn.length; i++){
 
-        var modelID = "model"+ (i+1).toString();
+        var modelID = "model"+ (num_of_nn[i]).toString();
 
         var data = accuracy_data[i].data;
 

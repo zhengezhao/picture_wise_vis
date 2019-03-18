@@ -22,14 +22,16 @@ class Net(nn.Module):
         self.fc2 = nn.Sequential(*layers)
 
     def forward(self, x):
-
         x = self.conv1(x)
         c1 = x
+        c1.retain_grad()
         x = self.conv2(x)
         c2 = x
+        c2.retain_grad()
         x = x.view(-1, 320)
         x = self.fc1(x)
         f1 = x
+        f1.retain_grad()
         x = self.drop(x)
         x = self.fc2(x)
         return c1,c2,f1,x

@@ -7,12 +7,19 @@ var allow_click= false;
 var dot_clicked;
 var isBrushing = false;
 var scales_hiddenLayerbar={};
-var labels=["input","c1","c2","f1","o"];
+var layers=["input","c1","c2","f1","o"];
 var doubleClicked=[null,null];
 var legend_clicked = {};
+var layer_clicked=null;
 for(var i =0;i<classes_n.length;i++){
     legend_clicked[classes_n[i]] = 0;
 }
+
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
 
 
 
@@ -442,6 +449,7 @@ function ShowImage(idx_list){
                     svg.selectAll(".image").classed("unselectedImage",true);
                     d3.select(this).classed("unselectedImage",false);
                     d3.selectAll(".dot").classed("selectedDot",function(k,j){return (k.index==d)?true:false});
+                    d3.selectAll(".selectedDot").moveToFront();
                    // DrawSlider(dot_clicked);
                 }
                 else{
@@ -459,6 +467,41 @@ function ShowImage(idx_list){
                 }
                 DrawSliders(dot_clicked);
             });
+    }
+
+}
+
+
+function argmaxDiff(data){
+    var max_value = 0;
+    var max_index = 0;
+    for(var i=1;i<data.length;i++){
+        var diff = data[i]-data[i-1];
+        if(Math.abs(diff)>max_value){
+            max_value = Math.abs(diff);
+            max_index = i;
+        }
+    }
+    console.log(max_value,max_index);
+    return max_index;
+
+}
+
+function SubmitInstanceData(dot_clicked){
+
+    if(doubleClicked[0]!=null && doubleClicked[1]!=null){
+        if (dot_clicked==null){return}
+
+        d3.request("http://0.0.0.0:5000/instance_data")
+                  .header("X-Requested-With", "XMLHttpRequest")
+                  .header("Content-Type", "application/x-www-form-urlencoded")
+                  .post(JSON.stringify([doubleClicked[0],doubleClicked[1],dot_clicked]), function(e)
+                    {
+                        var query_data = JSON.parse(e.response);
+                        console.log(query_data);
+                        DrawHiddenLayerDiv(query_data,dot_clicked);
+                    });
+
     }
 
 }
@@ -482,12 +525,29 @@ function DrawSliders(dot_clicked){
     for (var i =0;i<num_of_nn.length;i++){
 
         DrawSlider(i);
-
-
     }
+
+    SubmitInstanceData(dot_clicked);
 
     function DrawSlider(i){
         var svg  = div.append("svg").attr("width",svgWidth).attr("height",svgHeight).attr("id","loss_bar_model"+num_of_nn[i].toString()).append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+
+        var default_index = argmaxDiff(data[i]);
+
+        doubleClicked[i] = default_index;
+
+        svg.append("line").classed("selectedLine",true)
+            .attr("x1",x(default_index))
+            .attr("y1",0)
+            .attr("x2",x(default_index))
+            .attr("y2",height);
+
+        svg.append("text")
+            .classed("text_loss",true)
+            .attr("x",width-220)
+            .attr("y",2)
+            .style("fill","black")
+            .text("Epoch: "+(default_index-1).toString()+" ~ " +default_index.toString()+" Loss_Change: "+(data[i][default_index]- data[i][default_index-1]).toFixed(4));
 
 
 
@@ -557,26 +617,7 @@ function DrawSliders(dot_clicked){
                         .text("Epoch: "+(invertedx-1).toString()+" ~ " +invertedx.toString()+" Loss_Change: "+(data[i][invertedx]- data[i][invertedx-1]).toFixed(4));
 
                     doubleClicked[i] = invertedx;
-
-                    if(doubleClicked[0]!=null && doubleClicked[1]!=null){
-                        if (dot_clicked==null){return}
-
-                        d3.request("http://0.0.0.0:5000/instance_data")
-                                  .header("X-Requested-With", "XMLHttpRequest")
-                                  .header("Content-Type", "application/x-www-form-urlencoded")
-                                  .post(JSON.stringify([doubleClicked[0],doubleClicked[1],dot_clicked]), function(e)
-                                    {
-                                        var query_data = JSON.parse(e.response);
-                                        console.log(query_data);
-                                        DrawHiddenLayerDiv(query_data,dot_clicked);
-                                    });
-
-                    }
-
-
-
-
-
+                    SubmitInstanceData(dot_clicked);
                 }
             });
     }
@@ -703,6 +744,7 @@ function createScatterPlot(data){
                 d3.select(this).style("cursor", "pointer");
                 d3.select(this).classed("selectedDot",true);
                 ShowImage([i]);
+                d3.select(this).moveToFront();
             }
         })
         .on("mouseout",function(d,i){
@@ -711,6 +753,7 @@ function createScatterPlot(data){
                     d3.select(this).style("cursor", "default");
                     d3.select(this).classed("selectedDot",false);
                     ShowImage([dot_clicked]);
+
                 }
             }
         })
@@ -720,6 +763,7 @@ function createScatterPlot(data){
                 d3.selectAll(".selectedDot").classed("selectedDot",false);
                 d3.select(this).classed("selectedDot",true);
                 ShowImage([i]);
+                d3.select(this).moveToFront();
             }
             else{dot_clicked=null}
         });
@@ -971,32 +1015,30 @@ function DrawHiddenLayerDiv(data,dot_clicked){
     var div_height = document.getElementById("HiddenLayerDiv").offsetHeight;
     var div_width =  document.getElementById("HiddenLayerDiv").offsetWidth;
 
-    var labelHeight = 20;
+    var layerHeight = 20;
 
-    var labels=["input","c1","c2","f1","o"];
+    var layers=["input","c1","c2","f1","o"];
 
 
     var svgWidth = div_width;
-    var svgHeight= (div_height-labelHeight) / num_of_nn.length ;
-    var label_clicked= false;
-
+    var svgHeight= (div_height-layerHeight) / num_of_nn.length ;
 
 
     d3.select("#HiddenLayerDiv")
         .append("div")
-        .attr("id","labels")
+        .attr("id","layers")
         .style("width",svgWidth+'px')
-        .style("height", labelHeight+'px');
+        .style("height", layerHeight+'px');
 
-    var label_svg = d3.select("#labels")
+    var label_svg = d3.select("#layers")
                       .append("svg")
                       .attr("class","svglabel")
                       .attr("width",svgWidth)
-                      .attr("height",labelHeight);
+                      .attr("height",layerHeight);
 
 
-    label_svg.selectAll(".label").data(labels).enter().append("text")
-            .attr("class","label")
+    label_svg.selectAll(".label").data(layers).enter().append("text")
+            .attr("class","layer")
             .attr("id",function(d){return d;})
             .attr("y", 0)
             .attr("x",function(d,i){return i*svgWidth/5+svgWidth/10;})
@@ -1005,32 +1047,36 @@ function DrawHiddenLayerDiv(data,dot_clicked){
             .style("fill","black")
             .text(function(d){return d;})
             .on("click",function(d,i){
-                 if(!label_clicked){
-                    d3.select("#HiddenLayerDiv").selectAll("svg:not(."+d+")").classed("hidden",true);
-                    d3.select("#HiddenLayerDiv").selectAll(".image").classed("hidden",false);
-                    d3.select("#HiddenLayerDiv").selectAll(".svglabel").classed("hidden",false);
-                    d3.select("#HiddenLayerDiv").selectAll(".label:not(#"+d+")").classed("hidden",true);
-                    d3.select("#HiddenLayerDiv").selectAll("#input").classed("hidden",false);
-                    d3.select("#HiddenLayerDiv").select("#"+d).attr("x",svgWidth/5+svgWidth/10);
-                    label_clicked=true;
-                    DrawSearchHiddenLayer(d,dot_clicked);
-                }
-                else{
-                    d3.select("#HiddenLayerDiv").selectAll("svg").classed("hidden",false);
-                    d3.select("#HiddenLayerDiv").selectAll(".search").classed("hidden",true);
-                    d3.select("#HiddenLayerDiv").selectAll(".label").classed("hidden",false);
-                    label_clicked=false;
-                    d3.select("#HiddenLayerDiv").select("#"+d).attr("x",i*svgWidth/5+svgWidth/10);
-                }
-
+                SwitchView(d,i);
             });
+
+
+    function SwitchView(d,i){
+        if(layer_clicked==null){
+            d3.select("#HiddenLayerDiv").selectAll("svg:not(."+d+")").classed("hidden",true);
+            d3.select("#HiddenLayerDiv").selectAll(".image").classed("hidden",false);
+            d3.select("#HiddenLayerDiv").selectAll(".svglabel").classed("hidden",false);
+            d3.select("#HiddenLayerDiv").selectAll(".layer:not(#"+d+")").classed("hidden",true);
+            d3.select("#HiddenLayerDiv").selectAll("#input").classed("hidden",false);
+            d3.select("#HiddenLayerDiv").select("#"+d).attr("x",svgWidth/5+svgWidth/10);
+            layer_clicked=d;
+            DrawSearchHiddenLayer(d,dot_clicked);
+        }
+        else{
+            d3.select("#HiddenLayerDiv").selectAll("svg").classed("hidden",false);
+            d3.select("#HiddenLayerDiv").selectAll(".search").classed("hidden",true);
+            d3.select("#HiddenLayerDiv").selectAll(".layer").classed("hidden",false);
+            layer_clicked=null;
+            d3.select("#HiddenLayerDiv").select("#"+d).attr("x",i*svgWidth/5+svgWidth/10);
+        }
+    }
 
 
 
 
     var input_margin = {top:10, bottom:10, left:10, right:10};
 
-    var inputSvgHeight =div_height- labelHeight;
+    var inputSvgHeight =div_height- layerHeight;
     var inputSvgWidth = div_width/5;
 
     var input_width = +inputSvgWidth- input_margin.left-input_margin.right;
@@ -1088,8 +1134,17 @@ function DrawHiddenLayerDiv(data,dot_clicked){
           .attr("transform","translate("+(input_margin.left+25)+","+input_margin.top+")");
 
         //DrawStreamGraph(accuracy_data[i].data,modelID);
-       DrawHiddenLayer(data[i],modelID);
+       DrawHiddenLayer(data[i],modelID,i+1);
 
+    }
+    if(layer_clicked!=null){
+        d3.select("#HiddenLayerDiv").selectAll("svg:not(."+layer_clicked+")").classed("hidden",true);
+        d3.select("#HiddenLayerDiv").selectAll(".image").classed("hidden",false);
+        d3.select("#HiddenLayerDiv").selectAll(".svglabel").classed("hidden",false);
+        d3.select("#HiddenLayerDiv").selectAll(".layer:not(#"+layer_clicked+")").classed("hidden",true);
+        d3.select("#HiddenLayerDiv").selectAll("#input").classed("hidden",false);
+        d3.select("#HiddenLayerDiv").select("#"+layer_clicked).attr("x",svgWidth/5+svgWidth/10);
+        DrawSearchHiddenLayer(layer_clicked,dot_clicked);
     }
 
 
@@ -1097,7 +1152,7 @@ function DrawHiddenLayerDiv(data,dot_clicked){
 
 
 
-function DrawHiddenLayer(data,modelID){
+function DrawHiddenLayer(data,modelID,index_model){
     //console.log(data);
     var label_clicked = {};
     for(var i =0;i<classes_n.length;i++){
@@ -1146,13 +1201,10 @@ function DrawHiddenLayer(data,modelID){
 
         var svg;
 
-        if(data_id=="input" && modelID=="hiddenlayer_model5"){
-            svg = d3.select('#input_image').select("#heatmap1_g");
+        if(data_id=="input"){
+            svg = d3.select('#input_image').select("#heatmap"+index_model.toString()+"_g");
+        }
 
-        }
-        else if(data_id=="input" && modelID=="hiddenlayer_model6"){
-            svg = d3.select('#input_image').select("#heatmap2_g");
-        }
         else{
             svg = d3.select('#'+modelID)
                 .append("svg")
@@ -1271,7 +1323,7 @@ function DrawHiddenLayer(data,modelID){
                     label_clicked[i]=1;
                     d3.select(this).style("stroke","black").style("stroke-width",2);
                 }
-                UpdateHiddenCharts(modelID,label_clicked);
+                UpdateHiddenCharts(modelID,label_clicked,index_model);
 
             });
         }
@@ -1280,7 +1332,7 @@ function DrawHiddenLayer(data,modelID){
 }
 
 
-function UpdateHiddenCharts(modelID,label_clicked){
+function UpdateHiddenCharts(modelID,label_clicked,index_model){
     var epoch_chosen;
     if(modelID =="hiddenlayer_model5"){
         epoch_chosen=doubleClicked[0];
@@ -1298,15 +1350,15 @@ function UpdateHiddenCharts(modelID,label_clicked){
             {
                 var query_data = JSON.parse(e.response);
                 console.log(query_data);
-                UpdateConvChart(modelID,query_data[0]);
-                UpdateConvChart(modelID,query_data[1]);
-                UpdateConvChart(modelID,query_data[2]);
-                UpdateBarChart(modelID,query_data[3]);
+                UpdateConvChart(modelID,query_data[0],index_model);
+                UpdateConvChart(modelID,query_data[1],index_model);
+                UpdateConvChart(modelID,query_data[2],index_model);
+                UpdateBarChart(modelID,query_data[3],index_model);
             });
 }
 
 
-function UpdateConvChart(modelID,data){
+function UpdateConvChart(modelID,data,index_model){
     var margin = {top:10, bottom:20, left:10, right:10};
     var svgHeight = document.getElementById(modelID).offsetHeight;
     var svgWidth = document.getElementById(modelID).offsetWidth/4;
@@ -1315,20 +1367,22 @@ function UpdateConvChart(modelID,data){
     var data_label = data.label;
     var data_update = data.data;
     var svg;
-    console.log(data_label);
     if(data_label =="input"){
         //console.log("#heatmap"+modelID[modelID.length-1]+"_g");
-        svg = d3.select("#heatmap"+modelID[modelID.length-1]+"_g");
+        svg = d3.select("#heatmap"+index_model.toString()+"_g");
     }
     else{
         svg = d3.select("#"+modelID).select("."+data_label).select(".inner_space");
     }
 
-    var min = d3.extent(data_update)[0];
-    var max = d3.extent(data_update)[1];
+
+    var min = d3.min(data_update);
+    var max = d3.max(data_update);
 
     var max_abs = Math.max(Math.abs(min),Math.abs(max));
     var min_abs = max_abs*(-1.0);
+
+
 
     var color_update = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
 
@@ -1339,7 +1393,7 @@ function UpdateConvChart(modelID,data){
 
 }
 
-function UpdateBarChart(modelID,data){
+function UpdateBarChart(modelID,data,index_model){
     var margin = {top:10, bottom:20, left:10, right:10};
     var svgHeight = document.getElementById(modelID).offsetHeight;
     var svgWidth = document.getElementById(modelID).offsetWidth/4;
@@ -1352,7 +1406,7 @@ function UpdateBarChart(modelID,data){
     console.log(data_label);
     if(data_label =="input"){
         //console.log("#heatmap"+modelID[modelID.length-1]+"_g");
-        svg = d3.select("#heatmap"+modelID[modelID.length-1]+"_g");
+        svg = d3.select("#heatmap"+index_model.toString()+"_g");
     }
     else{
         svg = d3.select("#"+modelID).select("."+data_label).select(".inner_space");
@@ -1421,7 +1475,7 @@ function DrawQueryResult(data,data_id){
     var svgWidth = 570;
     var width_translate = document.getElementById("HiddenLayerDiv").offsetWidth - svgWidth;
     var width = +svgWidth- margin.left-margin.right;
-    var top_translate = document.getElementById("labels").offsetHeight;
+    var top_translate = document.getElementById("layers").offsetHeight;
     var height = +svgHeight -top_translate-margin.top- margin.bottom;
     var selectedDot = null;
     var new_xScale,new_yScale;
@@ -1501,6 +1555,7 @@ function DrawQueryResult(data,data_id){
           return color(d.label);
         })
         .on("mouseover",function(d,i){
+            d3.select(this).moveToFront();
             d3.select(this).style("cursor", "pointer");
             d3.select(this).classed("selectedQueryDot",true);
             DrawHiddenLayer_Query(data_id,d);
@@ -1509,6 +1564,7 @@ function DrawQueryResult(data,data_id){
         })
         .on("mouseout",function(d,i){
             if(selectedDot==null){
+
                 d3.select(this).style("cursor", "default");
                 d3.select(this).classed("selectedQueryDot",false);
                 DrawHiddenLayer_Query(data_id,data[selectedDot]);
@@ -1522,6 +1578,7 @@ function DrawQueryResult(data,data_id){
             }
         })
         .on("click",function(d,i){
+            d3.select(this).moveToFront();
             if(selectedDot!=i){
                 selectedDot=i;
                 d3.selectAll(".selectedQueryDot").classed("selectedQueryDot",false);
@@ -1550,14 +1607,14 @@ function DrawQueryResult(data,data_id){
 
 
 function DrawImage_Query(selectedDot_index){
-    var labelHeight = 20;
+    var layerHeight = 20;
 
     var div_height = document.getElementById("HiddenLayerDiv").offsetHeight;
     var div_width =  document.getElementById("HiddenLayerDiv").offsetWidth;
 
     var input_margin = {top:10, bottom:10, left:10, right:10};
 
-    var inputSvgHeight =div_height- labelHeight;
+    var inputSvgHeight =div_height- layerHeight;
     var inputSvgWidth = div_width/5;
 
     var input_width = +inputSvgWidth- input_margin.left-input_margin.right;
@@ -1579,7 +1636,10 @@ function DrawImage_Query(selectedDot_index){
         .attr("width",input_height/4-input_margin.top)
         .attr("height",input_height/4-input_margin.top)
         .attr("x",25)
-        .attr("y",input_height/4);
+        .attr("y",input_height/4)
+        .on("click",function(){
+            SubmitInstanceData(selectedDot_index);
+        });
 
 
 }

@@ -221,7 +221,7 @@ def GradientBackPropogation(nnidx,epoch,index,label_index=None):
             if i not in label_index:
                 output[0][i] = 0
 
-    print(output)
+    #print(output)
 
     output= torch.norm(output[0])
     # #print(output)
@@ -232,11 +232,31 @@ def GradientBackPropogation(nnidx,epoch,index,label_index=None):
     grad_of_param={}
 
     grad_of_param['input'] = input.grad.numpy().flatten()
-    grad_of_param['c1'] = c1.grad.numpy().flatten()
-    grad_of_param['c2'] = c2.grad.numpy().flatten()
-    grad_of_param['f1'] = f1.grad.numpy().flatten()
+    grad_of_param['c1'] = c1.grad.numpy().reshape(10,-1)
+    grad_of_param['c2'] = c2.grad.numpy().reshape(20,-1)
+    grad_of_param['f1'] = f1.grad.numpy().reshape(50,-1)
+
+
+
 
     return grad_of_param
+
+def GradCamAlgorithm(weight, matrix,up_dim):
+    matrix = np.array(matrix)
+    channel_num = matrix.shape[0]
+    weight = np.array(weight).reshape(channel_num,-1)
+    #weight = weight/np.sum(weight)
+    #print(weight_norm)
+    average_sum= np.zeros_like(matrix[0])
+    for i in range(channel_num):
+        average_sum += matrix[i]*weight[i]
+
+
+    average_tensor = torch.from_numpy(average_sum).type(torch.DoubleTensor).unsqueeze(0).unsqueeze(0)
+
+    upsample = nn.Upsample(size=(up_dim[0],up_dim[1]),mode='bilinear',align_corners=False)
+
+    return upsample(average_tensor).numpy().flatten()
 
 
 
@@ -268,41 +288,6 @@ def dumpPredictions():
 
 
 
-# def test():
-#     x = torch.randn(3, requires_grad=True)
-
-#     y = x * 2
-#     while y.data.norm() < 1000:
-#         y = y * 2
-
-#     print(y)
-
-#     v = torch.tensor([1.0, 1.0, 1.0], dtype=torch.float)
-#     y.backward(v)
-
-#     print(x.grad)
-
-
-    # grad_of_param = {}
-    # for name, parameter in net.named_parameters():
-    #     if parameter.grad is not None:
-    #         grad_of_param[name] = parameter.grad
-    # print(grad_of_param)
-    # return grad_of_param
-
-
-
-
-
-    # optimizer_2.zero_grad()
-    # _,_,output_2 = net_2(input)
-    # loss_2 =  np.dot(output_2,o_data)
-
-    # for index,data in enumerate(createModel.testset):
-    #     #print(index)
-    #     print(index,data)
-
-    #     break
 
 
 
@@ -321,7 +306,7 @@ if __name__ == '__main__':
     #print(log_loss_Caculator([[0.8,0.1,0.1],[0.2,0.3,0.5]],[0,0]))
 
     #print(Loss2RGB([10,2,2,3,2,2,2],[3,5,6,7,8,9,6]))
-    a = GradientBackPropogation(1,4,1)
+    #a = GradientBackPropogation(1,4,1)
 
     # print(a['input'].flatten().shape, a['c1'].flatten().shape, a['c2'].shape, a['f1'].shape)
 
@@ -336,6 +321,11 @@ if __name__ == '__main__':
     # plt.colorbar()
     # plt.show()
 
+    a=[1,2]
 
+    b= [[[1,2],[2,2]],[[2,5],[2,4]]]
+
+
+    GradCamAlgorithm(a,b,2,[4,4])
 
     #test()

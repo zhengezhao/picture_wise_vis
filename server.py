@@ -120,6 +120,7 @@ def Loss_Difference_Summary(input_data,bin_counts,sort_index):
 
 
 
+
 @app.route('/', methods = ["GET", "POST"])
 def index():
     data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
@@ -209,49 +210,27 @@ def get_image_data():
 
         data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen-1)))
 
-        # gradcam_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen-1,selectedDot)
 
-        # gradcam = utils.GradientBackPropogation(nn_chosen,epoch_chosen,selectedDot)
-        # gradcam_diff={}
+        grad_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen-1,selectedDot)['c1']
 
-        # for name in gradcam.keys():
-        #     gradcam_diff[name]= (gradcam[name] - gradcam_prev[name]).tolist()
+        grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen,selectedDot)['c1']
 
-        gradcam_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen-1,selectedDot)['input']
+        weight = np.mean(grad, axis=1)
+        weight_prev = np.mean(grad_prev,axis=1)
+        matrix_c1 = data_file[0]['c1'][selectedDot]
+        matrix_c1_prev = data_file_prev[0]['c1'][selectedDot]
 
-        gradcam = utils.GradientBackPropogation(nn_chosen,epoch_chosen,selectedDot)['input']
+        gradcam = utils.GradCamAlgorithm(weight,matrix_c1,[28,28])
 
+        gradcam_prev = utils.GradCamAlgorithm(weight_prev,matrix_c1_prev,[28,28])
+        #gradcam_prev = np.zeros(784)
 
-
-        matrix_f1 = data_file[0]['f1'][selectedDot]
-
-        matrix_o = data_file[0]['o'][selectedDot]
-
-        print(data_file[0]['c1'][selectedDot].shape)
-
-        matrix_c1 = data_file[0]['c1'][selectedDot].flatten()
-
-
-        matrix_c2 = data_file[0]['c2'][selectedDot].flatten()
-
-        print(matrix_c2.shape,matrix_c1.shape,matrix_f1.shape, matrix_o.shape)
-
-        matrix_f1_prev = data_file_prev[0]['f1'][selectedDot]
-
-        matrix_o_prev = data_file_prev[0]['o'][selectedDot]
-        #print(sum(matrix_o_prev))
-
-        matrix_c1_prev = data_file_prev[0]['c1'][selectedDot].flatten()
-
-        matrix_c2_prev = data_file_prev[0]['c2'][selectedDot].flatten()
-
-        data_s.append({'label': 'c1', 'data_origin': matrix_c1.tolist(), 'data_prev': matrix_c1_prev.tolist()})
-        data_s.append({'label': 'c2', 'data_origin': matrix_c2.tolist(), 'data_prev': matrix_c2_prev.tolist()})
-        data_s.append({'label': 'f1', 'data_origin': matrix_f1.tolist(), 'data_prev': matrix_f1_prev.tolist()})
-        data_s.append({'label': 'o', 'data_origin': matrix_o.tolist(), 'data_prev': matrix_o_prev.tolist()})
+        for label in ['c1','c2','f1','o']:
+            matrix = data_file[0][label][selectedDot]
+            matrix_prev = data_file_prev[0][label][selectedDot]
+            data_s.append({'label': label, 'data_origin': matrix.flatten().tolist(), 'data_prev': matrix_prev.flatten().tolist()})
 
         data_s.append({'label':'input','data_origin':gradcam.tolist(), 'data_prev': gradcam_prev.tolist()})
-
 
         data_summary.append(data_s)
 
@@ -345,36 +324,44 @@ def grad_data():
     print('model: ',model_idx,'epoch:',epoch_idx, "Index:", selectedDot,"Label:",labels)
 
     gradcam_diff=[]
+    data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx)))
 
-    if labels == []:
-        data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx)))
+    data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx-1)))
 
-        data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx-1)))
+    grad_prev = None
+    grad = None
 
-        gradcam_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot)['input']
+    if labels ==[]:
 
-        gradcam = utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot)['input']
+        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot)
 
-        gradcam_diff.append({'label':'input','data':(gradcam - gradcam_prev).tolist()})
-
-        for label in ['c1','c2','f1']:
-
-            matrix = data_file[0][label][selectedDot].flatten()
-
-            matrix_prev = data_file_prev[0][label][selectedDot].flatten()
-
-            gradcam_diff.append({'label':label,'data':(matrix - matrix_prev).tolist()})
-
-
+        grad= utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot)
     else:
-        gradcam_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot,labels)
+        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot,labels)
 
-        gradcam = utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot,labels)
+        grad = utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot,labels)
 
+    weight = np.mean(grad['c1'], axis=1)
+    weight_prev = np.mean(grad_prev['c1'],axis=1)
+    matrix_c1 = data_file[0]['c1'][selectedDot]
+    matrix_c1_prev = data_file_prev[0]['c1'][selectedDot]
 
-        for name in gradcam.keys():
-            diff =  gradcam[name] - gradcam_prev[name]
-            gradcam_diff.append({'label':name,'data':diff.tolist()})
+    gradcam = utils.GradCamAlgorithm(weight,matrix_c1,[28,28])
+
+    gradcam_prev = utils.GradCamAlgorithm(weight_prev,matrix_c1_prev,[28,28])
+
+    gradcam_diff.append({'label':'input','data':(gradcam - gradcam_prev).tolist()})
+    #gradcam_diff.append({'label':'input','data':gradcam.tolist()})
+    for label in ['c1','c2','f1']:
+
+        w = np.mean(grad[label], axis=1)
+        w_prev = np.mean(grad_prev[label],axis=1)
+        m_c1 = data_file[0][label][selectedDot]
+        m_c1_prev = data_file_prev[0][label][selectedDot]
+
+        diff =  (w*(m_c1.reshape((m_c1.shape[0],-1)).T)).T - (w_prev*(m_c1_prev.reshape((m_c1_prev.shape[0],-1)).T)).T
+        gradcam_diff.append({'label':label,'data':diff.flatten().tolist()})
+
 
 
     return jsonify(gradcam_diff)

@@ -74,7 +74,31 @@ def dumpLosses():
     print(losses.shape)
     return losses
 
+def dumpPredictions():
+    predictions =[]
+    for epoch in range(1,num_of_epoch+1):
+        outputs_epoch=[]
+        for nn in num_of_nn:
+            prediciton_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]
+            outputs_epoch.append(prediciton_file)
+        predictions.append(outputs_epoch)
 
+    predictions= np.array(predictions)
+    predictions = np.transpose(predictions,(2,1,0)) #shape: num_of_instances X number_of_nn X num_of_epoch
+    #print(predictions.shape)
+    return predictions
+
+
+
+
+predictions_data = None
+if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy')):
+    predictions_data = np.load(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy'))
+else:
+    predictions_data  = dumpPredictions()
+    np.save(os.path.join(cwd,'static/data',datasetname,'predictions_data.npy'),predictions_data)
+
+print(predictions_data.shape)
 
 tsne_data = None
 if os.path.isfile(os.path.join(cwd,'static/data',datasetname,'tsne_position.npy')):
@@ -125,7 +149,7 @@ def Loss_Difference_Summary(input_data,bin_counts,sort_index):
 def index():
     data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
     #data = jsonifydata(loss_data)
-    return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist())
+    return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist(), predict_data = predictions_data.tolist())
 
 
 @app.route('/class_data', methods =["GET", "POST"])
@@ -233,8 +257,6 @@ def get_image_data():
         data_s.append({'label':'input','data_origin':gradcam.tolist(), 'data_prev': gradcam_prev.tolist()})
 
         data_summary.append(data_s)
-
-
 
     return jsonify(data_summary)
 

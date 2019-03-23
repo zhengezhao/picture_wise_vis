@@ -289,19 +289,14 @@ div.tooltip {
 /* Style the lines by removing the fill and applying a stroke */
 .loss_line {
     fill: none;
-    stroke: #4682b4;
-    stroke-width: 2;
+    stroke: #eee;
+    stroke-width: 3;
 }
 
-/* Style the dots by assigning a fill and stroke */
-.loss_dot {
-    fill: #4682b4;
-    stroke: #fff;
-    stroke-width:0.2;
-}
+
 
 .line_axis{
-  font: 6px sans-serif;
+  font: 10px sans-serif;
 }
 
 .selectedLine{

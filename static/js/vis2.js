@@ -576,9 +576,9 @@ function DrawSliders(dot_clicked){
             .y(function(d) { return y(d); }) // set the y values for the line generator
             .curve(d3.curveMonotoneX); // apply smoothing to the line
 
-        var yAxis = d3.axisLeft(y).ticks(5);
+        var yAxis = d3.axisLeft(y).ticks(3).tickSize(2);
 
-        var xAxis = d3.axisBottom(x).ticks(20).tickSize(2);
+        var xAxis = d3.axisBottom(x).ticks(20).tickSize(1);
 
         // 3. Call the x axis in a group tag
         svg.append("g")
@@ -605,7 +605,10 @@ function DrawSliders(dot_clicked){
             .attr("class", "loss_dot") // Assign a class for styling
             .attr("cx", function(d, j) { return x(j+1) })
             .attr("cy", function(d) { return y(d) })
-            .attr("r", 2);
+            .attr("r", 3)
+            .style("fill",function(d,j){console.log(predict_data[dot_clicked][i][j]);return color(predict_data[dot_clicked][i][j]);})
+            .style("stroke","#fff")
+            .style("stroke-width",0.2);
 
         var rect_cover = svg.append("rect").attr("width",width).attr("height",height);
 
@@ -1084,12 +1087,8 @@ function DrawHiddenLayerDiv(data,dot_clicked){
             DrawSearchHiddenLayer(d,dot_clicked);
         }
         else{
-            //DrawHiddenLayerDiv(data,dot_clicked);
-            d3.select("#HiddenLayerDiv").selectAll("svg").classed("hidden",false);
-            d3.select("#HiddenLayerDiv").selectAll(".search").classed("hidden",true);
-            d3.select("#HiddenLayerDiv").selectAll(".layer").classed("hidden",false);
             layer_clicked=null;
-            d3.select("#HiddenLayerDiv").select("#"+d).attr("x",i*svgWidth/5+svgWidth/10);
+            SubmitInstanceData(dot_clicked);
         }
     }
 
@@ -1506,7 +1505,6 @@ function UpdateQueryResult(data){
     var width = +svgWidth- margin.left-margin.right;
     var top_translate = document.getElementById("layers").offsetHeight;
     var height = +svgHeight -top_translate-margin.top- margin.bottom;
-    var color= d3.scaleOrdinal(d3.schemeCategory10);
 
     var x = d3.scaleLinear().range([0,width]).nice();
     var y  = d3.scaleLinear().range([height,0]).nice();

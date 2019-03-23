@@ -255,10 +255,10 @@ def SearchActiviationDiff(nn,epoch,layer_id,index_dot):
         data_distance.append(float(distance))
 
 
-    toplist = np.argsort(data_distance)
+    # toplist = np.argsort(data_distance)
     distancelist = data_distance
     topdata = data_diff
-    return topdata.tolist(),toplist.tolist(), distancelist
+    return topdata.tolist(), distancelist
 
 
 @app.route('/search_instance_data', methods=["GET","POST"])
@@ -273,38 +273,42 @@ def searh_instance_data():
     print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot,"Layer: ", layer_id)
 
 
-    NN_data_1,sort_indices_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
+    # NN_data_1,sort_indices_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
 
-    NN_data_2,sort_indices_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
+    # NN_data_2,sort_indices_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
+
+    NN_data_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
+    NN_data_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
+
+    # data_points=set([])
 
 
-    data_points=set([])
-
-
-    s1=0
-    s2=0
-    while len(data_points) < top_num:
-       # print(NN_distances_1[sort_indices_1[s1]],NN_distances_2[sort_indices_2[s2]])
-        if NN_distances_1[sort_indices_1[s1]] <= NN_distances_2[sort_indices_2[s2]]:
-            data_points.add(sort_indices_1[s1])
-            s1= s1+1
-        else:
-            data_points.add(sort_indices_2[s2])
-            s2 = s2+1
+    #TODO: I foridden the rank right now
+    # s1=0
+    # s2=0
+    # while len(data_points) < top_num:
+    #    # print(NN_distances_1[sort_indices_1[s1]],NN_distances_2[sort_indices_2[s2]])
+    #     if NN_distances_1[sort_indices_1[s1]] <= NN_distances_2[sort_indices_2[s2]]:
+    #         data_points.add(sort_indices_1[s1])
+    #         s1= s1+1
+    #     else:
+    #         data_points.add(sort_indices_2[s2])
+    #         s2 = s2+1
 
     #print(s1,s2)
 
     # data_points.remove(selectedDot)
-    data_points = list(data_points)
+    # data_points = list(data_points)
 
     #print(len(data_points))
 
     result=[]
 
     for i in range(top_num):
-        index = data_points[i]
+        # index = data_points[i]
         #print(type(index), type(true_label[index]), type(NN_distances_1[i]), type(NN_distances_2[i]))
-        data_point = {"label":true_label[index],"index": index, "x": NN_distances_1[index], "y": NN_distances_2[index], "v1": NN_data_1[index], "v2": NN_data_2[index]}
+        # data_point = {"label":true_label[index],"index": index, "x": NN_distances_1[index], "y": NN_distances_2[index], "v1": NN_data_1[index], "v2": NN_data_2[index]}
+        data_point = {"label":true_label[i],"index": i, "x": NN_distances_1[i], "y": NN_distances_2[i], "v1": NN_data_1[i], "v2": NN_data_2[i]}
         #print(data_point)
         result.append(data_point)
     #print(result)

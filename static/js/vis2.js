@@ -11,6 +11,23 @@ var layers=["input","c1","c2","f1","o"];
 var doubleClicked=[null,null];
 var legend_clicked = {};
 var layer_clicked=null;
+var scales_query_scatter={};
+var selectedDot_Query = null;
+var label_clicked = {};
+
+
+
+function InitialDic(data,len){
+    for(var i =0;i<len;i++){
+        data[i] = 0;
+    }
+}
+
+
+
+
+
+
 for(var i =0;i<classes_n.length;i++){
     legend_clicked[classes_n[i]] = 0;
 }
@@ -1010,8 +1027,12 @@ function DrawLossBar(data,modelID){
 
 
 function DrawHiddenLayerDiv(data,dot_clicked){
-
-    d3.select("#HiddenLayerDiv").selectAll("div").remove();
+    if(layer_clicked==null){
+        d3.select("#HiddenLayerDiv").selectAll("div").remove();
+    }
+    else{
+        d3.select("#HiddenLayerDiv").selectAll("div:not(#QueryScatterPlotDiv)").remove();
+    }
     var div_height = document.getElementById("HiddenLayerDiv").offsetHeight;
     var div_width =  document.getElementById("HiddenLayerDiv").offsetWidth;
 
@@ -1063,6 +1084,7 @@ function DrawHiddenLayerDiv(data,dot_clicked){
             DrawSearchHiddenLayer(d,dot_clicked);
         }
         else{
+            //DrawHiddenLayerDiv(data,dot_clicked);
             d3.select("#HiddenLayerDiv").selectAll("svg").classed("hidden",false);
             d3.select("#HiddenLayerDiv").selectAll(".search").classed("hidden",true);
             d3.select("#HiddenLayerDiv").selectAll(".layer").classed("hidden",false);
@@ -1070,8 +1092,6 @@ function DrawHiddenLayerDiv(data,dot_clicked){
             d3.select("#HiddenLayerDiv").select("#"+d).attr("x",i*svgWidth/5+svgWidth/10);
         }
     }
-
-
 
 
     var input_margin = {top:10, bottom:10, left:10, right:10};
@@ -1138,8 +1158,12 @@ function DrawHiddenLayerDiv(data,dot_clicked){
 
     }
     if(layer_clicked!=null){
-        d3.select("#HiddenLayerDiv").selectAll("svg:not(."+layer_clicked+")").classed("hidden",true);
-        d3.select("#HiddenLayerDiv").selectAll(".image").classed("hidden",false);
+        for(var l=0;l<layers.length;l++){
+            if(layers[l]!=layer_clicked){
+                d3.select("#HiddenLayerDiv").selectAll("svg."+layers[l]).classed("hidden",true);
+            }
+        }
+        d3.select("#HiddenLayerDiv").select("#input_image").selectAll("svg:not(.image)").classed("hidden",true);
         d3.select("#HiddenLayerDiv").selectAll(".svglabel").classed("hidden",false);
         d3.select("#HiddenLayerDiv").selectAll(".layer:not(#"+layer_clicked+")").classed("hidden",true);
         d3.select("#HiddenLayerDiv").selectAll("#input").classed("hidden",false);
@@ -1154,10 +1178,7 @@ function DrawHiddenLayerDiv(data,dot_clicked){
 
 function DrawHiddenLayer(data,modelID,index_model){
     //console.log(data);
-    var label_clicked = {};
-    for(var i =0;i<classes_n.length;i++){
-        label_clicked[i] = 0;
-    }
+    InitialDic(label_clicked,classes_n.length);
 
     var margin = {top:10, bottom:20, left:10, right:10};
     var svgHeight = document.getElementById(modelID).offsetHeight;
@@ -1315,6 +1336,7 @@ function DrawHiddenLayer(data,modelID,index_model){
             bars.style("fill",function(d,i){return color(i);});
             bars.on("click",function(d,i){
                 console.log(i.toString(),d);
+                console.log(label_clicked);
                 if(label_clicked[i]==1){
                     label_clicked[i] = 0;
                     d3.select(this).style("stroke","none");
@@ -1455,17 +1477,81 @@ function DrawSearchHiddenLayer(data_id,dot_clicked){
 
         if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
 
+
         d3.request("http://0.0.0.0:5000/search_instance_data")
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .post(JSON.stringify([data_id,epoch_chosen,epoch2_chosen,dot_clicked]), function(e)
             {
                 var query_data = JSON.parse(e.response);
-                console.log(query_data);
-                DrawQueryResult(query_data,data_id);
+                //console.log(query_data[0].x);
+                if(document.getElementById("QueryScatterPlotDiv") == null){
+                    //console.log("DrawLegend")
+                    DrawQueryResult(query_data,data_id);
+                 }//
+                else{
+                     UpdateQueryResult(query_data);
+                }
             });
 }
 
+function UpdateQueryResult(data){
+
+    d3.select("#QueryScatterPlotDiv").selectAll(".hidden").classed("hidden",false);
+
+    var margin = {top:20, bottom:40, left:30, right:20};
+    var svgHeight = document.getElementById("HiddenLayerDiv").offsetHeight;
+    var svgWidth = 570;
+    var width_translate = document.getElementById("HiddenLayerDiv").offsetWidth - svgWidth;
+    var width = +svgWidth- margin.left-margin.right;
+    var top_translate = document.getElementById("layers").offsetHeight;
+    var height = +svgHeight -top_translate-margin.top- margin.bottom;
+    var color= d3.scaleOrdinal(d3.schemeCategory10);
+
+    var x = d3.scaleLinear().range([0,width]).nice();
+    var y  = d3.scaleLinear().range([height,0]).nice();
+    var xMin= d3.extent(data.map(function(d){return d.x;}))[0] *0.95;
+    var xMax= d3.extent(data.map(function(d){return d.x;}))[1] *1.05;
+    var yMin = d3.extent(data.map(function(d){return d.y;}))[0] * 0.95;
+    var yMax = d3.extent(data.map(function(d){return d.y;}))[1] * 1.05;
+
+    var min = Math.min(xMin,yMin);
+    var max = Math.max(xMax,yMax);
+    console.log(min,max);
+
+    x.domain([min-max*0.1,max]);
+    y.domain([min-max*0.1,max]);
+
+    var xAxis = d3.axisBottom(x).tickSize(-height);
+    var yAxis = d3.axisLeft(y).tickSize(-width);
+
+
+    var svg = d3.select("#QueryScatterPlotDiv").select(".inner_space");
+
+    var t = d3.transition().duration(1000);
+
+
+    svg.select(".axis--x").transition(t).call(xAxis);
+    svg.select(".axis--y").transition(t).call(yAxis);
+
+    //console.log(data);
+
+
+    svg.selectAll(".query_dot")
+        .data(data, d=>d.index)
+        .transition()
+        .duration(2000)
+        .attr("cx", function(d){return x(d.x)})
+        .attr("cy",function(d){return y(d.y)})
+        .style("fill",function(d,i){return color(d.label)});
+
+
+    d3.selectAll(".selectedQueryDot").classed("selectedQueryDot",false);
+    d3.select('#HiddenLayerDiv').selectAll(".query_image").remove();
+    selectedDot_Query=null;
+
+
+}
 
 function DrawQueryResult(data,data_id){
 
@@ -1477,7 +1563,7 @@ function DrawQueryResult(data,data_id){
     var width = +svgWidth- margin.left-margin.right;
     var top_translate = document.getElementById("layers").offsetHeight;
     var height = +svgHeight -top_translate-margin.top- margin.bottom;
-    var selectedDot = null;
+    selectedDot_Query = null;
     var new_xScale,new_yScale;
 
     $("#QueryScatterPlotDiv").remove();
@@ -1505,6 +1591,7 @@ function DrawQueryResult(data,data_id){
       .attr("height",svgHeight-top_translate)
       .append("g")
       .attr("transform","translate("+margin.left+","+margin.top+")")
+      .attr("class","inner_space")
       .call(zoomBeh);
 
 
@@ -1517,6 +1604,8 @@ function DrawQueryResult(data,data_id){
 
     var min = Math.min(xMin,yMin);
     var max = Math.max(xMax,yMax);
+
+    //console.log(min,max);
 
     x.domain([min-max*0.1,max]);
     y.domain([min-max*0.1,max]);
@@ -1544,8 +1633,10 @@ function DrawQueryResult(data,data_id){
         .attr("height", height);
 
 
+    console.log(data);
+
     objects.selectAll(".query_dot")
-        .data(data)
+        .data(data,d=>d.index)
         .enter().append("circle")
         .attr("class", "query_dot")
         .attr("r", 3)
@@ -1563,30 +1654,30 @@ function DrawQueryResult(data,data_id){
 
         })
         .on("mouseout",function(d,i){
-            if(selectedDot==null){
+            if(selectedDot_Query==null){
 
                 d3.select(this).style("cursor", "default");
                 d3.select(this).classed("selectedQueryDot",false);
-                DrawHiddenLayer_Query(data_id,data[selectedDot]);
+                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
                 DrawImage_Query(null);
             }
-            else if(selectedDot!=i){
+            else if(selectedDot_Query!=d.index){
                 d3.select(this).style("cursor", "default");
                 d3.select(this).classed("selectedQueryDot",false);
-                DrawHiddenLayer_Query(data_id,data[selectedDot]);
-                DrawImage_Query(data[selectedDot].index);
+                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
+                DrawImage_Query(selectedDot_Query);
             }
         })
         .on("click",function(d,i){
             d3.select(this).moveToFront();
-            if(selectedDot!=i){
-                selectedDot=i;
+            if(selectedDot_Query!=d.index){
+                selectedDot_Query=d.index;
                 d3.selectAll(".selectedQueryDot").classed("selectedQueryDot",false);
                 d3.select(this).classed("selectedQueryDot",true);
-                DrawHiddenLayer_Query(data_id,data[selectedDot]);
-                DrawImage_Query(data[selectedDot].index);
+                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
+                DrawImage_Query(data[selectedDot_Query].index);
             }
-            else{selectedDot=null}
+            else{selectedDot_Query=null}
         });
 
 
@@ -1624,7 +1715,7 @@ function DrawImage_Query(selectedDot_index){
 
     if(selectedDot_index==null){return}
 
-    console.log(selectedDot_index);
+    //console.log(selectedDot_index);
 
 
     var svg = d3.select('#HiddenLayerDiv').select("#image_svg");

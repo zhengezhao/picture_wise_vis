@@ -8,7 +8,7 @@ var dot_clicked;
 var isBrushing = false;
 var scales_hiddenLayerbar={};
 var layers=["input","c1","c2","f1","o"];
-var doubleClicked=[null,null];
+var doubleClicked=[[null,null],[null,null]];
 var legend_clicked = {};
 var layer_clicked=null;
 var scales_query_scatter={};
@@ -506,13 +506,13 @@ function argmaxDiff(data){
 
 function SubmitInstanceData(dot_clicked){
 
-    if(doubleClicked[0]!=null && doubleClicked[1]!=null){
+    if(doubleClicked[0][0]!=null && doubleClicked[0][1]!=null&& doubleClicked[1][0]!=null && doubleClicked[1][1]!=null){
         if (dot_clicked==null){return}
 
         d3.request("http://0.0.0.0:5000/instance_data")
                   .header("X-Requested-With", "XMLHttpRequest")
                   .header("Content-Type", "application/x-www-form-urlencoded")
-                  .post(JSON.stringify([doubleClicked[0],doubleClicked[1],dot_clicked]), function(e)
+                  .post(JSON.stringify([doubleClicked[0][0],doubleClicked[0][1],doubleClicked[1][0],doubleClicked[1][1],dot_clicked]), function(e)
                     {
                         var query_data = JSON.parse(e.response);
                         console.log(query_data);
@@ -551,13 +551,9 @@ function DrawSliders(dot_clicked){
 
         var default_index = argmaxDiff(data[i]);
 
-        doubleClicked[i] = default_index;
+        doubleClicked[i][1] = default_index;
+        doubleClicked[i][0] = default_index-1;
 
-        svg.append("line").classed("selectedLine",true)
-            .attr("x1",x(default_index))
-            .attr("y1",0)
-            .attr("x2",x(default_index))
-            .attr("y2",height);
 
         svg.append("text")
             .classed("text_loss",true)
@@ -599,47 +595,47 @@ function DrawSliders(dot_clicked){
             .attr("d", line);
 
         // 12. Appends a circle for each datapoint
-        svg.selectAll(".dot")
-            .data(data[i].slice(1))
+        svg.selectAll(".loss_dot")
+            .data(data[i])
             .enter().append("circle") // Uses the enter().append() method
             .attr("class", "loss_dot") // Assign a class for styling
-            .attr("cx", function(d, j) { return x(j+1) })
+            .attr("cx", function(d, j) { return x(j) })
             .attr("cy", function(d) { return y(d) })
             .attr("r", 3)
             .style("fill",function(d,j){console.log(predict_data[dot_clicked][i][j]);return color(predict_data[dot_clicked][i][j]);})
             .style("stroke","#fff")
             .style("stroke-width",0.2);
 
-        var rect_cover = svg.append("rect").attr("width",width).attr("height",height);
+        var brush = d3.brushX().extent([[0,0],[width,height]]).on("end",brushed);
 
-        rect_cover.on("mouseover",function(){
-                d3.select(this).style("cursor", "pointer");
-            })
-            .on("click",function(){
-                var mousex = d3.mouse(this)[0];
-                var invertedx = Math.round(x.invert(mousex));
-                if(invertedx!=0)
-                {
-                    console.log(invertedx);
-                    svg.selectAll(".selectedLine").remove();
-                    svg.append("line").classed("selectedLine",true)
-                       .attr("x1",x(invertedx))
-                       .attr("y1",0)
-                       .attr("x2",x(invertedx))
-                       .attr("y2",height);
 
-                    svg.selectAll(".text_loss").remove();
-                    svg.append("text")
-                        .classed("text_loss",true)
-                        .attr("x",width-220)
-                        .attr("y",2)
-                        .style("fill","black")
-                        .text("Epoch: "+(invertedx-1).toString()+" ~ " +invertedx.toString()+" Loss_Change: "+(data[i][invertedx]- data[i][invertedx-1]).toFixed(4));
+        function brushed(){
+            if (!d3.event.sourceEvent) return; // Only transition after input.
+            if (!d3.event.selection) return; // Ignore empty selections.
+            var d0 = d3.event.selection.map(x.invert),
+                d1 = d0.map(Math.round);
+            d3.select(this).transition().call(d3.event.target.move, d1.map(x));
 
-                    doubleClicked[i] = invertedx;
-                    SubmitInstanceData(dot_clicked);
-                }
-            });
+            if(d1[1]>d1[0]){
+
+                console.log(d1);
+                doubleClicked[i][0] = d1[0];
+                doubleClicked[i][1] = d1[1];
+                SubmitInstanceData(dot_clicked);
+                svg.selectAll(".text_loss").remove();
+
+                svg.append("text")
+                    .classed("text_loss",true)
+                    .attr("x",width-220)
+                    .attr("y",2)
+                    .style("fill","black")
+                    .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+            }
+        }
+
+
+        svg.append("g").attr("class","brush").call(brush).call(brush.move,[default_index-1,default_index].map(x));
+
     }
 
 }
@@ -1362,12 +1358,12 @@ function UpdateHiddenCharts(modelID,label_clicked,index_model){
         epoch_chosen=doubleClicked[1];
     }
 
-    if (epoch_chosen==""  || dot_clicked==null){return}
+    if (epoch_chosen[0]==null || epoch_chosen[1]==null  || dot_clicked==null){return}
 
     d3.request("http://0.0.0.0:5000/grad_instance_data")
           .header("X-Requested-With", "XMLHttpRequest")
           .header("Content-Type", "application/x-www-form-urlencoded")
-          .post(JSON.stringify([modelID,epoch_chosen,dot_clicked,label_clicked]), function(e)
+          .post(JSON.stringify([modelID,epoch_chosen[0],epoch_chosen[1],dot_clicked,label_clicked]), function(e)
             {
                 var query_data = JSON.parse(e.response);
                 console.log(query_data);
@@ -1474,13 +1470,13 @@ function DrawSearchHiddenLayer(data_id,dot_clicked){
         var epoch_chosen = doubleClicked[0];
         var epoch2_chosen = doubleClicked[1];
 
-        if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
+        if (doubleClicked[0][0]==null || doubleClicked[0][1]==null || doubleClicked[1][0]==null || doubleClicked[1][1]==null || dot_clicked==null){return}
 
 
         d3.request("http://0.0.0.0:5000/search_instance_data")
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .post(JSON.stringify([data_id,epoch_chosen,epoch2_chosen,dot_clicked]), function(e)
+        .post(JSON.stringify([data_id,doubleClicked,dot_clicked]), function(e)
             {
                 var query_data = JSON.parse(e.response);
                 //console.log(query_data[0].x);
@@ -1914,28 +1910,6 @@ $(document).ready(function(){
     // CreateDropDownlist('selectEpoch2',num_of_epoch);
 
 });
-
-
-function HiddenLayerSubmit(){
-    var e1 = document.getElementById("selectEpoch");
-    var e2 = document.getElementById("selectEpoch2");
-
-    var epoch_chosen = e1.options[e1.selectedIndex].value;
-    var epoch2_chosen = e2.options[e2.selectedIndex].value;
-    console.log(epoch_chosen,epoch2_chosen,dot_clicked);
-
-    if (epoch_chosen=="" || epoch2_chosen=="" || dot_clicked==null){return}
-
-    d3.request("http://0.0.0.0:5000/instance_data")
-              .header("X-Requested-With", "XMLHttpRequest")
-              .header("Content-Type", "application/x-www-form-urlencoded")
-              .post(JSON.stringify([epoch_chosen,epoch2_chosen,dot_clicked]), function(e)
-                {
-                    var query_data = JSON.parse(e.response);
-                    console.log(query_data);
-                    DrawHiddenLayerDiv(query_data,dot_clicked);
-                });
-}
 
 
 

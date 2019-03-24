@@ -218,10 +218,9 @@ def get_accuracy_data():
 @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def get_image_data():
     data_summary = []
-    epochs =[]
-    epoch1_chosen,epoch2_chosen,selectedDot = json.loads(request.get_data())
-    epochs.append(int(epoch1_chosen))
-    epochs.append(int(epoch2_chosen))
+    epoch_0_0,epoch_0_1,epoch_1_0,epoch_1_1,selectedDot = json.loads(request.get_data())
+    epochs =[[int(epoch_0_0),int(epoch_0_1)],[int(epoch_1_0),int(epoch_1_1)]]
+
     print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot)
 
     for i,nn_chosen in enumerate(num_of_nn):
@@ -230,14 +229,14 @@ def get_image_data():
 
         epoch_chosen = epochs[i]
 
-        data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen)))
+        data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen[1])))
 
-        data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen-1)))
+        data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen[0])))
 
 
-        grad_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen-1,selectedDot)['c1']
+        grad_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen[0],selectedDot)['c1']
 
-        grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen,selectedDot)['c1']
+        grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen[1],selectedDot)['c1']
 
         weight = np.mean(grad, axis=1)
         weight_prev = np.mean(grad_prev,axis=1)
@@ -260,10 +259,10 @@ def get_image_data():
 
     return jsonify(data_summary)
 
-def SearchActiviationDiff(nn,epoch,layer_id,index_dot):
-    data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0][layer_id].reshape(num_of_input,-1)
+def SearchActiviationDiff(nn,epochs,layer_id,index_dot):
+    data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epochs[1])))[0][layer_id].reshape(num_of_input,-1)
 
-    data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch-1)))[0][layer_id].reshape(num_of_input,-1)
+    data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epochs[0])))[0][layer_id].reshape(num_of_input,-1)
 
     data_diff = data_file - data_file_prev
 
@@ -289,18 +288,18 @@ def searh_instance_data():
     top_num= 1000
     data_summary = []
     epochs =[]
-    layer_id,epoch1_chosen,epoch2_chosen,selectedDot = json.loads(request.get_data())
-    epochs.append(int(epoch1_chosen))
-    epochs.append(int(epoch2_chosen))
-    print('epoch for model 1: ',epochs[0],"epoch for model 2: " ,epochs[1], "Index:", selectedDot,"Layer: ", layer_id)
+    layer_id,[epochs_1,epochs_2],selectedDot = json.loads(request.get_data())
+    epochs_1 = list(map(int, epochs_1))
+    epochs_2 = list(map(int, epochs_2))
+    print('epoch for model 1: ',epochs_1,"epoch for model 2: " ,epochs_2, "Index:", selectedDot,"Layer: ", layer_id)
 
 
     # NN_data_1,sort_indices_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
 
     # NN_data_2,sort_indices_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
 
-    NN_data_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs[0],layer_id,selectedDot)
-    NN_data_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs[1],layer_id,selectedDot)
+    NN_data_1,NN_distances_1 = SearchActiviationDiff(num_of_nn[0],epochs_1,layer_id,selectedDot)
+    NN_data_2,NN_distances_2 = SearchActiviationDiff(num_of_nn[1],epochs_2,layer_id,selectedDot)
 
     # data_points=set([])
 
@@ -341,29 +340,30 @@ def searh_instance_data():
 @app.route('/grad_instance_data', methods=["GET","POST"])
 @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def grad_data():
-    modelID,epoch_chosen,selectedDot,label_clicked= json.loads(request.get_data())
+    modelID,epoch_chosen_prev,epoch_chosen,selectedDot,label_clicked= json.loads(request.get_data())
     model_idx = int(modelID[-1])
     epoch_idx = int(epoch_chosen)
+    epoch_idx_prev = int(epoch_chosen_prev)
     selectedDot = int(selectedDot)
     #print(label_clicked)
     labels = [i  for i in range(10) if label_clicked[str(i)]==1]
-    print('model: ',model_idx,'epoch:',epoch_idx, "Index:", selectedDot,"Label:",labels)
+    print('model: ',model_idx,'epoch:',epoch_idx,'epoch_prev:',epoch_idx_prev, "Index:", selectedDot,"Label:",labels)
 
     gradcam_diff=[]
     data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx)))
 
-    data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx-1)))
+    data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(model_idx,epoch_idx_prev)))
 
     grad_prev = None
     grad = None
 
     if labels ==[]:
 
-        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot)
+        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx_prev,selectedDot)
 
         grad= utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot)
     else:
-        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx-1,selectedDot,labels)
+        grad_prev = utils.GradientBackPropogation(model_idx,epoch_idx_prev,selectedDot,labels)
 
         grad = utils.GradientBackPropogation(model_idx,epoch_idx,selectedDot,labels)
 

@@ -76,7 +76,7 @@ def dumpLosses():
 
 def dumpPredictions():
     predictions =[]
-    for epoch in range(1,num_of_epoch+1):
+    for epoch in range(0,num_of_epoch+1):
         outputs_epoch=[]
         for nn in num_of_nn:
             prediciton_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[1]

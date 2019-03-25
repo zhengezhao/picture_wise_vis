@@ -17,18 +17,22 @@
   var tsne_data = {{tsne_data|safe}};
   var classes_n = {{classes_n|safe}};
 
-  var loss_diff_data = {{loss_diff_data|safe}}
+  var loss_diff_data = {{loss_diff_data|safe}};
 
-  var predict_data= {{predict_data|safe}}
+  var predict_data= {{predict_data|safe}};
+
+  var indices = {{indices|safe}};
+
 
   // var true_label = {{true_label|safe}};
 
 </script>
 <body>
-
   <div class="vis">
 
     <button type='button' id='streamGraphBtn'>HIDE</button>
+
+    <button type='button' id='findDivergingBtn'>FIND</button>
 
     <div id ="legend_div" class='frame'>
     </div>
@@ -62,11 +66,14 @@
    <div id="slider-epoch" class="frame"></div>
 
 
+
   </div>
 
 
+
 </body>
-<script type="text/javascript" src="{{url_for('static', filename='js/simpleheat.js')}}"></script>
+<script type="text/javascript" src="{{url_for('static', filename='js/heatmap.js')}}"></script>
+<!-- <script type="text/javascript" src="{{url_for('static', filename='js/heatmap.min.js')}}"></script> -->
 <script type="text/javascript" src="{{url_for('static', filename='js/math.min.js')}}"></script>
 <script type="text/javascript" src="{{url_for('static', filename='js/jquery-1.11.3.min.js')}}"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>

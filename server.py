@@ -142,14 +142,66 @@ def Loss_Difference_Summary(input_data,bin_counts,sort_index):
     return data_result
 
 
+def DivergingInstancesFinder(top_num):
+    outputs = []
+    for epoch in range(0, num_of_epoch+1):
+        outputs_epoch = []
+        for nn in num_of_nn:
+            last_layer_data = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epoch)))[0]['o']
+            outputs_epoch.append(last_layer_data)
+        outputs.append(outputs_epoch)
+    outputs= np.array(outputs) #shape: num_of_epoch X num_of_nn X num_of_instances X output
+
+    outputs = np.transpose(outputs,(2,1,0,3)) #shape: num_of_instances X num_of_nn X num_of_epoch X output
+
+
+    print(outputs.shape)
+    diffs=[]
+
+    for instance in outputs:
+        v1 = np.array([utils.softmax(instance[0][i]) for i in range(num_of_epoch+1)])
+        #print(v1.shape)
+        v1 = v1.flatten()
+        v2 = np.array([utils.softmax(instance[1][i]) for i in range(num_of_epoch+1)]).flatten()
+        diff = np.linalg.norm(v1-v2)
+        diffs.append(diff)
+
+    diffs =np.array(diffs)
+
+    sorted_diffs = np.sort(diffs)[::-1]
+    sorted_indices = np.argsort(diffs)[::-1]
+
+    return sorted_indices[:top_num]
+
+
+def DivergingInstancesFinder2(top_num):
+    diffs = []
+    for instance in losses_instance_data: #num_of_instances X number_of_nn X num_of_epoch
+        v1 = instance[0]
+        v2=  instance[1]
+        diff = np.linalg.norm(v1-v2)
+        diffs.append(diff)
+    sorted_diffs = np.sort(diffs)[::-1]
+    sorted_indices = np.argsort(diffs)[::-1]
+
+    return sorted_indices[:top_num]
+
+
+
+
 
 
 
 @app.route('/', methods = ["GET", "POST"])
 def index():
+    #diveraging_indices = DivergingInstancesFinder(100).tolist()
+
+    #hard code
+    diveraging_indices = [669, 252, 120, 480, 628, 945, 542, 852, 984, 658, 183, 23, 930, 827, 579, 394, 635, 849, 958, 216, 476, 190, 271, 43, 445, 758, 788, 612, 103, 751, 737, 939, 320, 602, 807, 640, 192, 856, 898, 454, 381, 764, 418, 588, 465, 630, 52, 529, 108, 316, 743, 485, 753, 623, 554, 502, 894, 6, 805, 760, 312, 286, 217, 632, 382, 997, 985, 374, 750, 506, 409, 705, 379, 42, 332, 993, 361, 590, 855, 308, 627, 413, 269, 290, 735, 584, 483, 688, 557, 141, 663, 661, 664, 283, 971, 67, 995, 932, 107, 531]
+
     data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
     #data = jsonifydata(loss_data)
-    return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist(), predict_data = predictions_data.tolist())
+    return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist(), predict_data = predictions_data.tolist(), indices= diveraging_indices)
 
 
 @app.route('/class_data', methods =["GET", "POST"])

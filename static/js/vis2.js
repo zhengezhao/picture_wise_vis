@@ -2,7 +2,7 @@
 var color= d3.scaleOrdinal(d3.schemeCategory10);
 let scales_stackedbar = {};
 var index_new = [0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9];
-var subBarDrawn = false;
+// var isBrushing = false;
 var allow_click= false;
 var dot_clicked;
 var isBrushing = false;
@@ -17,15 +17,19 @@ var label_clicked = {};
 
 
 
+function IsDicZeros(a){
+    for (var i=0;i<classes_n.length;i++){
+        if(a[classes_n[i]] != 0) return false;
+    }
+    return true;
+}
+
+
 function InitialDic(data,len){
     for(var i =0;i<len;i++){
         data[i] = 0;
     }
 }
-
-
-
-
 
 
 for(var i =0;i<classes_n.length;i++){
@@ -37,25 +41,6 @@ d3.selection.prototype.moveToFront = function() {
     this.parentNode.appendChild(this);
   });
 };
-
-
-
-
-function CreateDropDownlist(id,num){
-    var options = [];
-    for (var i = 1; i <= parseInt(num); i++) {
-        options.push(i);
-    }
-    var select = document.getElementById(id);
-
-    for(var i = 0; i < options.length; i++) {
-        var opt = options[i];
-        var el = document.createElement("option");
-        el.textContent = opt;
-        el.value = opt;
-        select.appendChild(el);
-    }
-}
 
 
 function createStreamGraph(){
@@ -87,7 +72,7 @@ function createStreamGraph(){
 }
 
 function DrawLegend(){
-    var classes = classes_n
+    var classes = classes_n;
     var div_height = document.getElementById("legend_div").offsetHeight;
     var div_width = document.getElementById("legend_div").offsetWidth;
 
@@ -108,12 +93,6 @@ function DrawLegend(){
                 .attr("transform","translate("+margin.left+","+margin.top+")");
 
 
-    function IsDicZeros(a){
-        for (var i=0;i<classes.length;i++){
-            if(a[classes[i]] != 0) return false;
-        }
-        return true;
-    }
 
     var legend = svg.selectAll(".legend")
                     .data(classes)
@@ -140,75 +119,56 @@ function DrawLegend(){
             d3.select(this).style("cursor", "pointer");
                 legend.select("rect").style("opacity",function(k,j){return legend_clicked[classes[j]]==1||i==j ? 1:0.2});
 
-            if(subBarDrawn==false){
+            if(isBrushing==false){
                 d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1||i==index_new[k.index]? 1:0.2});
                 d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1||i==k.label?false:true;});
             }
             else{
-
                 d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1||i==k.label?false:true});
                 d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1||i==index_new[k.index]? 1:0.2});
+                d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes[tsne_data[k].label]]==1||tsne_data[k].label==i?false:true});
 
 
             }
-               // d3.select(this).style("fill",function(){return color(i)});
         })
         .on("mouseout",function(){
             if(IsDicZeros(legend_clicked)){
                 //gray out all the others
-                if(subBarDrawn==false){
+                if(isBrushing==false){
                     legend.selectAll("rect").style("opacity",1);
                     d3.selectAll(".bar").style("opacity",1);
                     d3.selectAll(".dot").classed("unSelectedDot",false);
                 }
                 else{
                     legend.selectAll("rect").style("opacity",1);
-                    d3.selectAll(".dot.brushed").classed("unSelectedDot",false);
+                    d3.selectAll(".dot").classed("unSelectedDot",false);
                     d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",1);
 
                 }
+                d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",false);
             }
             else{
-                if(subBarDrawn==false){
-                //`console.log(this);
+                if(isBrushing==false){
                     d3.select(this).style("opacity",function(k){return legend_clicked[k]==1?1:0.2});
                     d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
                     d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
                 }
                 else{
                     d3.select(this).style("opacity",function(k){return legend_clicked[k]==1?1:0.2});
-                    d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
+                    d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
                     d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
-
-
+                     d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes[tsne_data[k].label]]==1?false:true});
                 }
             }
         })
         .on("click",function(d,i){
             if(legend_clicked[d] === 1){
                 legend_clicked[d] = 0;
-               d3.select(this).classed("selected_legend",false).style('opacity',0.2);
+                d3.select(this).classed("selected_legend",false).style('opacity',0.2);
             }
             else{
                 legend_clicked[d] = 1;
-               d3.select(this).classed("selected_legend",true).style('opcacity',1);
-                //legend.select("rect").style("opacity",function(k,j){return legend_clicked[j]==1 ? 1:0.2});
-            }
-            //UpdateStackedBar(legend_clicked);
-            //For the scatterplot
-            if(subBarDrawn==false){
-                d3.selectAll(".dot").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
-
-                //console.log(legend_clicked);
-
-                d3.selectAll(".bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1?1:0.2});
-            }
-            else{
-                d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes[tsne_data[k].label]]==1?false:true});
-                d3.selectAll(".dot:not(.brushed)").classed("unSelectedDot",true);
-                d3.selectAll(".dot.brushed").classed("unSelectedDot",function(k,j){return legend_clicked[classes[k.label]]==1?false:true});
-                d3.selectAll(".sub_bar").selectAll(".instances.bar").style("opacity",function(k,j){return legend_clicked[classes[index_new[k.index]]]==1? 1:0.2});
-
+                d3.select(this).classed("selected_legend",true).style('opcacity',1);
             }
 
         });
@@ -377,7 +337,7 @@ function DrawLegend(){
  svg.selectAll(".bar")
     .on('mouseover', function(d,i){
         //console.log(d);
-        if(clicked==false && subBarDrawn==false){
+        if(clicked==false && isBrushing==false){
             d3.select(this).style('fill',d3.rgb(color(index_new[d.index])).brighter());
             d3.select(this).style("cursor", "pointer");
             mousex = d3.mouse(this)[0];
@@ -411,7 +371,7 @@ function DrawLegend(){
         });
        })
     .on('mouseout', function(d){
-        if(subBarDrawn==false){
+        if(isBrushing==false){
             d3.select(this).style('fill', color(index_new[d.index]));
             d3.select(this).style("cursor", "default");
             //console.log(clicked);
@@ -420,7 +380,7 @@ function DrawLegend(){
             }
           }
     })
-    .on('click',function(){if(subBarDrawn==false){
+    .on('click',function(){if(isBrushing==false){
         clicked=true;
         console.log("clicked");
 
@@ -470,7 +430,7 @@ function ShowImage(idx_list){
                    // DrawSlider(dot_clicked);
                 }
                 else{
-                    if(subBarDrawn==false){
+                    if(isBrushing==false){
                         dot_clicked=null;
                         svg.selectAll(".image").classed("unselectedImage",false);
                         d3.selectAll(".dot").classed("selectedDot",false);
@@ -636,7 +596,8 @@ function DrawSliders(dot_clicked){
         }
 
 
-        svg.append("g").attr("class","brush").call(brush).call(brush.move,[default_index_min,default_index_max].map(x));
+        svg.append("g").attr("class","brush").call(brush);
+        // .call(brush.move,[default_index_min,default_index_max].map(x));
 
     }
 
@@ -680,8 +641,6 @@ function createScatterPlot(data){
     var width = +svgWidth- margin.left-margin.right;
     dot_clicked = null;
     var height = +svgHeight -margin.top- margin.bottom;
-    //var selectedDot = null;
-    //var new_xScale,new_yScale;
 
     var x = d3.scaleLinear().range([0,width]).nice();
     var y  = d3.scaleLinear().range([height,0]).nice();
@@ -696,10 +655,6 @@ function createScatterPlot(data){
     var xAxis = d3.axisBottom(x).tickSize(-height);
     var yAxis = d3.axisLeft(y).tickSize(-width);
 
-      //Zoom function
-    // var zoomBeh = d3.zoom()
-    //     .scaleExtent([1,500])
-    //     .on("zoom", zoom);
 
     var svg = d3.select('#ScatterPlotDiv')
       .append('svg')
@@ -708,7 +663,6 @@ function createScatterPlot(data){
       .attr("height", svgHeight)
       .append("g")
       .attr("transform","translate("+margin.left+","+margin.top+")");
-    //  .call(zoomBeh);
 
 
 
@@ -787,34 +741,12 @@ function createScatterPlot(data){
         });
 
 
-
-
-    // function zoom() {
-    //   //console.log(d3.event.transform.k +"  "+ d3.event.transform.x+ "  "+ d3.event
-    //    // .transform.y);
-    //     if (d3.event.transform.k === 1) {d3.event.transform.y = 0; d3.event.transform.x =0;}
-    //     new_xScale = d3.event.transform.rescaleX(x);
-    //     new_yScale = d3.event.transform.rescaleY(y);
-    //   // update axes
-    //     gX.call(xAxis.scale(new_xScale));
-    //     gY.call(yAxis.scale(new_yScale));
-
-    //     svg.selectAll(".dot")
-    //           .attr("transform", d3.event.transform)
-    //           .attr("r",3/d3.event.transform.k)
-    //           .style("stroke-width",1/d3.event.transform.k);
-    // }
-
     d3.select("#SPReset").on("click", reSet);
 
 
     d3.select("#findDivergingBtn").on("click", showDivergingPoints);
 
     function reSet() {
-          // svg.transition()
-          // .duration(750)
-          // .call(zoomBeh.transform, d3.zoomIdentity);
-          svg.selectAll(".dot").style("fill",function(d){return color(d.label);}).classed("unSelectedDot",false).classed("non_brushed",false).classed("brushed",false);
           svg.select("g.brush").call(brush.move, null);
           $('#SPSwitch').hide();
           d3.selectAll('rect.instances').remove();
@@ -822,13 +754,14 @@ function createScatterPlot(data){
             .style("fill", function(d,i){return color(index_new[d.index]);})
             .style("opacity",1);
         d3.selectAll(".legend").selectAll('.rect').style("opacity",1);
-        subBarDrawn= false;
+        isBrushing= false;
         $("#ImagesDiv").empty();
         isBrushing = false;
         for(var i =0;i<classes_n.length;i++){
             legend_clicked[classes_n[i]] = 0;
         }
         d3.select("#SvgLegend").selectAll("rect").classed('selected_legend',false).style("opacity",1);
+          d3.selectAll(".dot").style("fill",function(d){return color(d.label);}).classed("unSelectedDot",false).classed("non_brushed",false).classed("brushed",false);
 
 
     }
@@ -836,94 +769,97 @@ function createScatterPlot(data){
     function showDivergingPoints(){
         reSet();
         isBrushing = true;
+        svg.selectAll(".dot").filter(function (d,i){ return indices.indexOf(d.index) == -1})
+            .classed("non_brushed",true);
+
         ShowImage(indices);
 
 
     }
 
-    // d3.select("BrushClick").on("click",onClickBrush);
+}
 
 
 
-    function filterBarChart(){
-        if (!d3.event.selection) return
+function filterBarChart(){
+    if (!d3.event.selection) return
 
-        isBrushing=true;
+    isBrushing=true;
 
-        var d_brushed = d3.selectAll(".brushed").data();
+   // var d_brushed = d3.selectAll(".brushed:not(.unSelectedDot)").data();
+   var d_brushed = d3.selectAll(".brushed").data();
 
+    var brushed_index = d_brushed.map(d=>d.index);
+    console.log(brushed_index);
 
-        var brushed_index = d_brushed.map(d=>d.index);
-        console.log(brushed_index);
+    ShowImage(brushed_index);
 
-        ShowImage(brushed_index);
+    isBrushing= true;
 
-        subBarDrawn= true;
-
-
-
-        d3.request("http://0.0.0.0:5000/loss_sub_data")
-              .header("X-Requested-With", "XMLHttpRequest")
-              .header("Content-Type", "application/x-www-form-urlencoded")
-              .post(JSON.stringify(brushed_index), function(e)
-                {
-                    var query_data = JSON.parse(e.response);
-
-                    //console.log(query_data);
-
-                    for (var i=0; i < num_of_nn.length; i++){
-                        var modelID = "model"+ (num_of_nn[i]).toString();
-
-                        DrawLossBar(query_data[i].data,modelID);
-
-                    }
-                    console.log(query_data);
-                    // UpdateScatterPlot($(this).attr('epoch'),$(this).attr('c'),$(this).attr('modelid'),query_data);
-                    //DrawScatterPlot(query_data);
-                });
+    if(IsDicZeros(legend_clicked)){
+        d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",false);
 
     }
-
-    function highlightBrushedDots(){
-        //diable dot_clicked
-        d3.selectAll(".selectedDot").classed("selectedDot",false);
-        dot_clicked = null;
-
-
-        var circles = d3.selectAll(".dot:not(.unSelectedDot)");
-        if(d3.event.selection !=null){
-            circles.classed("non_brushed",true).classed("brushed",false);
-            var brush_coords = d3.brushSelection(this);
-            $("#ImagesDiv").empty();
-         // style brushed circles
-            circles.filter(function (){
-
-               var cx = d3.select(this).attr("cx"),
-                   cy = d3.select(this).attr("cy");
-
-               return isBrushed(brush_coords, cx, cy);
-            })
-            .classed("non_brushed",false).classed("brushed",true);
-        }
-    }
-
-    function isBrushed(brush_coords, cx, cy) {
-
-        var x0 = brush_coords[0][0],
-            x1 = brush_coords[1][0],
-            y0 = brush_coords[0][1],
-            y1 = brush_coords[1][1];
-
-        return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+    else{
+        d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes_n[tsne_data[k].label]]==1?false:true});
     }
 
 
 
+    d3.request("http://0.0.0.0:5000/loss_sub_data")
+          .header("X-Requested-With", "XMLHttpRequest")
+          .header("Content-Type", "application/x-www-form-urlencoded")
+          .post(JSON.stringify(brushed_index), function(e)
+            {
+                var query_data = JSON.parse(e.response);
 
+                //console.log(query_data);
 
+                for (var i=0; i < num_of_nn.length; i++){
+                    var modelID = "model"+ (num_of_nn[i]).toString();
 
+                    DrawLossBar(query_data[i].data,modelID);
+
+                }
+                console.log(query_data);
+            });
 
 }
+
+function highlightBrushedDots(){
+    //diable dot_clicked
+    d3.selectAll(".selectedDot").classed("selectedDot",false);
+    dot_clicked = null;
+
+
+    d3.selectAll(".dot").classed("non_brushed",true).classed("brushed",false);
+
+    if(d3.event.selection !=null){
+        var brush_coords = d3.brushSelection(this);
+     // style brushed circles
+        d3.selectAll(".dot").filter(function (){
+
+           var cx = d3.select(this).attr("cx"),
+               cy = d3.select(this).attr("cy");
+
+           return isBrushed(brush_coords, cx, cy);
+        })
+        .classed("non_brushed",false).classed("brushed",true);
+
+    d3.selectAll(".unSelectedDot").classed("unSelectedDot",true);
+    }
+}
+
+function isBrushed(brush_coords, cx, cy) {
+
+    var x0 = brush_coords[0][0],
+        x1 = brush_coords[1][0],
+        y0 = brush_coords[0][1],
+        y1 = brush_coords[1][1];
+
+    return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+}
+
 
 function onClickShow(button_name,show_div,show_text,hide_text){
     $('body').on('click','#'+button_name,function(event){
@@ -1895,8 +1831,6 @@ $(document).ready(function(){
     DrawLegend();
     onClickShow('streamGraphBtn','ScatterPlotdiv',"SHOW","HIDE");
     createScatterPlot(tsne_data);
-    // CreateDropDownlist('selectEpoch',num_of_epoch);
-    // CreateDropDownlist('selectEpoch2',num_of_epoch);
 
 });
 

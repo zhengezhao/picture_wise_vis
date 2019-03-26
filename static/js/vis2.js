@@ -14,6 +14,7 @@ var layer_clicked=null;
 var scales_query_scatter={};
 var selectedDot_Query = null;
 var label_clicked = {};
+var modelID_list =["hiddenlayer_model5","hiddenlayer_model6"];
 
 
 
@@ -1283,7 +1284,7 @@ function DrawHiddenLayer(data,modelID,index_model){
 
 function UpdateHiddenCharts(modelID,label_clicked,index_model){
     var epoch_chosen;
-    if(modelID =="hiddenlayer_model5"){
+    if(modelID ==modelID_list[0]){
         epoch_chosen=doubleClicked[0];
     }
     else{
@@ -1676,7 +1677,6 @@ function DrawHiddenLayer_Query(data_id,data){
     var svgWidth = (document.getElementById("HiddenLayerDiv").offsetWidth*0.6-svgHeight)/2;
     var width = +svgWidth- margin.left-margin.right;
     var height = +svgHeight -margin.top- margin.bottom;
-    var modelID_list =["hiddenlayer_model5","hiddenlayer_model6"];
     //console.log(data);
     //console.log(data_id,data);
     // d3.select('#'+modelID).selectAll(".QueryHiddenLayer").remove();

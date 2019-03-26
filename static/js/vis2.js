@@ -17,7 +17,6 @@ var label_clicked = {};
 var modelID_list =["hiddenlayer_model1","hiddenlayer_model2"];
 
 
-
 function IsDicZeros(a){
     for (var i=0;i<classes_n.length;i++){
         if(a[classes_n[i]] != 0) return false;
@@ -367,7 +366,7 @@ function DrawLegend(){
         });
 
         $(".classes_button").click(function(){
-            d3.request("http://0.0.0.0:5001/class_data")
+            d3.request("http://0.0.0.0:8000/class_data")
               .header("X-Requested-With", "XMLHttpRequest")
               .header("Content-Type", "application/x-www-form-urlencoded")
               .post(JSON.stringify([$(this).attr('epoch'),$(this).attr('c1'),$(this).attr('modelid')]), function(e)
@@ -426,7 +425,7 @@ function ShowImage(idx_list){
         //console.log(idx_list);
 
         svg.selectAll(".image").data(idx_list).enter().append("svg:image").attr("class","image")
-            .attr("xlink:href",function(d,i){return "static/data/fashion-mnist/test-images/"+d+".png"})
+            .attr("xlink:href",function(d,i){return "static/data/mnist/test-images/"+d+".png"})
             .attr("width",width/row)
             .attr("height",height/row)
             .attr("x",function(d,i){return x(i%row);})
@@ -480,7 +479,7 @@ function SubmitInstanceData(dot_clicked){
     if(doubleClicked[0][0]!=null && doubleClicked[0][1]!=null&& doubleClicked[1][0]!=null && doubleClicked[1][1]!=null){
         if (dot_clicked==null){return}
 
-        d3.request("http://0.0.0.0:5001/instance_data")
+        d3.request("http://0.0.0.0:8000/instance_data")
                   .header("X-Requested-With", "XMLHttpRequest")
                   .header("Content-Type", "application/x-www-form-urlencoded")
                   .post(JSON.stringify([doubleClicked[0][0],doubleClicked[0][1],doubleClicked[1][0],doubleClicked[1][1],dot_clicked]), function(e)
@@ -839,7 +838,7 @@ function filterBarChart(){
 
 
 
-    d3.request("http://0.0.0.0:5001/loss_sub_data")
+    d3.request("http://0.0.0.0:8000/loss_sub_data")
           .header("X-Requested-With", "XMLHttpRequest")
           .header("Content-Type", "application/x-www-form-urlencoded")
           .post(JSON.stringify(brushed_index), function(e)
@@ -1047,7 +1046,7 @@ function DrawHiddenLayerDiv(data,dot_clicked){
     var tooltip = d3.select("#input_image").append('div').attr('class', 'hidden image_tooltip');
 
     image_svg.selectAll("image").data([0]).enter().append("svg:image")
-            .attr("xlink:href","static/data/fashion-mnist/test-images/"+dot_clicked+".png")
+            .attr("xlink:href","static/data/mnist/test-images/"+dot_clicked+".png")
             .attr("class","input_image")
             .attr("width",input_height/4-input_margin.top)
             .attr("height",input_height/4-input_margin.top)
@@ -1293,7 +1292,7 @@ function UpdateHiddenCharts(modelID,label_clicked,index_model){
 
     if (epoch_chosen[0]==null || epoch_chosen[1]==null  || dot_clicked==null){return}
 
-    d3.request("http://0.0.0.0:5001/grad_instance_data")
+    d3.request("http://0.0.0.0:8000/grad_instance_data")
           .header("X-Requested-With", "XMLHttpRequest")
           .header("Content-Type", "application/x-www-form-urlencoded")
           .post(JSON.stringify([modelID,epoch_chosen[0],epoch_chosen[1],dot_clicked,label_clicked]), function(e)
@@ -1406,7 +1405,7 @@ function DrawSearchHiddenLayer(data_id,dot_clicked){
         if (doubleClicked[0][0]==null || doubleClicked[0][1]==null || doubleClicked[1][0]==null || doubleClicked[1][1]==null || dot_clicked==null){return}
 
 
-        d3.request("http://0.0.0.0:5001/search_instance_data")
+        d3.request("http://0.0.0.0:8000/search_instance_data")
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .post(JSON.stringify([data_id,doubleClicked,dot_clicked]), function(e)
@@ -1650,7 +1649,7 @@ function DrawImage_Query(selectedDot_index){
     var tooltip = d3.select("#input_image").append('div').attr('class', 'hidden image_tooltip');
 
     svg.selectAll(".query_image").data([0]).enter().append("svg:image")
-        .attr("xlink:href","static/data/fashion-mnist/test-images/"+selectedDot_index+".png")
+        .attr("xlink:href","static/data/mnist/test-images/"+selectedDot_index+".png")
         .attr("class","query_image")
         .attr("width",input_height/4-input_margin.top)
         .attr("height",input_height/4-input_margin.top)

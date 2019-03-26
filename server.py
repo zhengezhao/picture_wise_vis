@@ -453,7 +453,7 @@ def grad_data():
 
 if __name__ == '__main__':
     #print(true_label)
-    app.run(host='0.0.0.0', port = 5001)
+    app.run(host='0.0.0.0', port = 8000)
 
 
     # print(instance_data_matrix_f1.shape,instance_data_matrix_f2.shape,instance_data_matrix_o.shape,instance_data_weight_f1.shape,instance_data_weight_f2.shape,instance_data_weight_o.shape)

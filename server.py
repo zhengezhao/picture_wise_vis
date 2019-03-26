@@ -200,36 +200,6 @@ def index():
     return render_template('index.html',data = data, num_of_nn = num_of_nn, num_of_epoch = num_of_epoch, classes = list(classes_pos_neg), tsne_data= tsne_data.tolist(), classes_n = list(classes), loss_diff_data =losses_instance_data.tolist(), predict_data = predictions_data.tolist(), indices= diveraging_indices)
 
 
-@app.route('/class_data', methods =["GET", "POST"])
-@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
-def get_class_data():
-    epoch_idx,class_name,modelid = json.loads(request.get_data())
-    class_name = class_name[:-3]
-    class_idx = classes.index(class_name)
-    model_idx = int(modelid[5:])
-    epoch_idx = int(epoch_idx)
-
-    print('epoch:',epoch_idx,'class:',class_name,'class_idx:',class_idx,'model_idx:',model_idx)
-    selected_index = sort_index[bin_counts[class_idx]:bin_counts[class_idx+1]]
-
-
-    #shape of losses_instance_data: num_of_instances X number_of_nn X num_of_epoch
-
-    #print(losses_instance_data.shape)
-
-    #print(losses_instance_data[selected_index].shape)
-
-    loss_after = losses_instance_data[selected_index][:,num_of_nn.index(model_idx),epoch_idx]
-
-    loss_before = losses_instance_data[selected_index][:,num_of_nn.index(model_idx),epoch_idx-1]
-
-    #print(loss_before,loss_after)
-
-    points_summary = {'whole_index':selected_index.tolist(), 'loss_before': loss_before.tolist(), 'loss_after': loss_after.tolist()}
-
-
-    return jsonify(points_summary)
-
 
 
 @app.route('/loss_sub_data', methods =["GET", "POST"])

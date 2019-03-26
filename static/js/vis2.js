@@ -493,7 +493,7 @@ function SubmitInstanceData(dot_clicked){
 
 }
 
-function DrawSliders(dot_clicked){
+function DrawSliders(dot_clicked_){
 
     var div = d3.select("#slider-epoch");
     var svgHeight = document.getElementById("slider-epoch").offsetHeight/2;
@@ -503,9 +503,9 @@ function DrawSliders(dot_clicked){
     var height = +svgHeight -margin.top- margin.bottom;
     $("#slider-epoch").empty();
 
-    if(dot_clicked==null){return}
+    if(dot_clicked_==null){return}
 
-    var data = loss_diff_data[dot_clicked];
+    var data = loss_diff_data[dot_clicked_];
 
     var x = d3.scaleLinear().domain([0, 100]).range([0, width]);
 
@@ -514,7 +514,7 @@ function DrawSliders(dot_clicked){
         DrawSlider(i);
     }
 
-    SubmitInstanceData(dot_clicked);
+    SubmitInstanceData(dot_clicked_);
 
     function DrawSlider(i){
         var svg  = div.append("svg").attr("width",svgWidth).attr("height",svgHeight).attr("id","loss_bar_model"+num_of_nn[i].toString()).append("g").attr("transform","translate("+margin.left+","+margin.top+")");
@@ -574,7 +574,7 @@ function DrawSliders(dot_clicked){
             .attr("cx", function(d, j) { return x(j) })
             .attr("cy", function(d) { return y(d) })
             .attr("r", 3)
-            .style("fill",function(d,j){console.log(predict_data[dot_clicked][i][j]);return color(predict_data[dot_clicked][i][j]);})
+            .style("fill",function(d,j){return color(predict_data[dot_clicked_][i][j]);})
             .style("stroke","#fff")
             .style("stroke-width",0.2);
 
@@ -1664,6 +1664,7 @@ function DrawImage_Query(selectedDot_index){
             tooltip.classed("hidden",true);
             })
         .on("click",function(){
+            dot_clicked = selectedDot_index;
             SubmitInstanceData(selectedDot_index);
         });
 

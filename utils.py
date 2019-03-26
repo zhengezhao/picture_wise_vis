@@ -196,11 +196,7 @@ def loadNN(net,nnidx,epoch):
 
 def GradientBackPropogation(nnidx,epoch,index,label_index=None):
 
-
-    if nnidx <3 or nnidx>4:
-        net = createModel.initModel('fashion-mnist')
-    else:
-        net = createModel.initModel('fashion-mnist_2')
+    net = createModel.initModel('mnist')
 
 
     loadNN(net, nnidx, epoch)

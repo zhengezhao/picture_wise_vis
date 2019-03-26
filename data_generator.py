@@ -10,12 +10,12 @@ import numpy.linalg as linalg
 import os
 import createModel as createModel
 
-num_of_nn = 4
+num_of_nn = 2
 num_of_epoch = 100
 
 cwd = os.getcwd()
 
-datasetname = 'fashion-mnist'
+datasetname = 'mnist'
 model_path =os.path.join(cwd,'static/data',datasetname,'model')
 
 full_data_path =os.path.join(cwd,'static/data',datasetname,'data_full_layer')
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     #     for j in range(num_of_epoch):
     #         data_full_layer_vectors('fashion-mnist_2',i, j+1)
 
-    for i in [5,6]:
+    for i in [1,2]:
         for j in range(num_of_epoch+1):
             data_full_layer_vectors('fashion-mnist',i, j)
 

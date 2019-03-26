@@ -47,7 +47,7 @@ num_of_epoch = 100
 
 cwd = os.getcwd()
 
-datasetname = 'fashion-mnist'
+datasetname = 'mnist'
 
 images_folder = os.path.join(cwd,'static/data',datasetname,'test-images')
 tsne_position = os.path.join(cwd,'static/data',datasetname,'tsne_position.npy')
@@ -104,7 +104,7 @@ def dump_tsne_images():
     for i in range(len(labels)):
         results.append({'label': labels[i], 'data':trans_data[i].tolist(), 'index':i})
     print(results)
-    np.save('tsne_position',results)
+    np.save(tsne_position,results)
 
     #np.save('tsne_position',trans_data)
     #np.save()
@@ -296,8 +296,8 @@ def dumpPredictions():
 
 
 if __name__ == '__main__':
-    #dumpImages()
-    #dump_tsne_images()
+    dumpImages()
+    dump_tsne_images()
     #plot_tsne_images()
 
     # cross_entropy(np.array([[1,0,0]]),np.array([[1,0,0]]))
@@ -321,11 +321,11 @@ if __name__ == '__main__':
     # plt.colorbar()
     # plt.show()
 
-    a=[1,2]
+    # a=[1,2]
 
-    b= [[[1,2],[2,2]],[[2,5],[2,4]]]
+    # b= [[[1,2],[2,2]],[[2,5],[2,4]]]
 
 
-    GradCamAlgorithm(a,b,2,[4,4])
+    # GradCamAlgorithm(a,b,2,[4,4])
 
     #test()

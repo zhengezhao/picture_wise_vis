@@ -14,6 +14,7 @@ var layer_clicked=null;
 var scales_query_scatter={};
 var selectedDot_Query = null;
 var label_clicked = {};
+var modelID_list =["hiddenlayer_model1","hiddenlayer_model2"];
 
 
 
@@ -366,7 +367,7 @@ function DrawLegend(){
         });
 
         $(".classes_button").click(function(){
-            d3.request("http://0.0.0.0:5000/class_data")
+            d3.request("http://0.0.0.0:5001/class_data")
               .header("X-Requested-With", "XMLHttpRequest")
               .header("Content-Type", "application/x-www-form-urlencoded")
               .post(JSON.stringify([$(this).attr('epoch'),$(this).attr('c1'),$(this).attr('modelid')]), function(e)
@@ -479,7 +480,7 @@ function SubmitInstanceData(dot_clicked){
     if(doubleClicked[0][0]!=null && doubleClicked[0][1]!=null&& doubleClicked[1][0]!=null && doubleClicked[1][1]!=null){
         if (dot_clicked==null){return}
 
-        d3.request("http://0.0.0.0:5000/instance_data")
+        d3.request("http://0.0.0.0:5001/instance_data")
                   .header("X-Requested-With", "XMLHttpRequest")
                   .header("Content-Type", "application/x-www-form-urlencoded")
                   .post(JSON.stringify([doubleClicked[0][0],doubleClicked[0][1],doubleClicked[1][0],doubleClicked[1][1],dot_clicked]), function(e)
@@ -838,7 +839,7 @@ function filterBarChart(){
 
 
 
-    d3.request("http://0.0.0.0:5000/loss_sub_data")
+    d3.request("http://0.0.0.0:5001/loss_sub_data")
           .header("X-Requested-With", "XMLHttpRequest")
           .header("Content-Type", "application/x-www-form-urlencoded")
           .post(JSON.stringify(brushed_index), function(e)
@@ -1283,7 +1284,7 @@ function DrawHiddenLayer(data,modelID,index_model){
 
 function UpdateHiddenCharts(modelID,label_clicked,index_model){
     var epoch_chosen;
-    if(modelID =="hiddenlayer_model5"){
+    if(modelID ==modelID_list[0]){
         epoch_chosen=doubleClicked[0];
     }
     else{
@@ -1292,7 +1293,7 @@ function UpdateHiddenCharts(modelID,label_clicked,index_model){
 
     if (epoch_chosen[0]==null || epoch_chosen[1]==null  || dot_clicked==null){return}
 
-    d3.request("http://0.0.0.0:5000/grad_instance_data")
+    d3.request("http://0.0.0.0:5001/grad_instance_data")
           .header("X-Requested-With", "XMLHttpRequest")
           .header("Content-Type", "application/x-www-form-urlencoded")
           .post(JSON.stringify([modelID,epoch_chosen[0],epoch_chosen[1],dot_clicked,label_clicked]), function(e)
@@ -1405,7 +1406,7 @@ function DrawSearchHiddenLayer(data_id,dot_clicked){
         if (doubleClicked[0][0]==null || doubleClicked[0][1]==null || doubleClicked[1][0]==null || doubleClicked[1][1]==null || dot_clicked==null){return}
 
 
-        d3.request("http://0.0.0.0:5000/search_instance_data")
+        d3.request("http://0.0.0.0:5001/search_instance_data")
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .post(JSON.stringify([data_id,doubleClicked,dot_clicked]), function(e)
@@ -1676,7 +1677,6 @@ function DrawHiddenLayer_Query(data_id,data){
     var svgWidth = (document.getElementById("HiddenLayerDiv").offsetWidth*0.6-svgHeight)/2;
     var width = +svgWidth- margin.left-margin.right;
     var height = +svgHeight -margin.top- margin.bottom;
-    var modelID_list =["hiddenlayer_model5","hiddenlayer_model6"];
     //console.log(data);
     //console.log(data_id,data);
     // d3.select('#'+modelID).selectAll(".QueryHiddenLayer").remove();

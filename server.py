@@ -24,10 +24,10 @@ app.debug = True
 
 cwd = os.getcwd()
 
-datasetname = 'fashion-mnist'
+datasetname = 'mnist'
 
 num_of_epoch  =100
-num_of_nn  = [5,6]
+num_of_nn  = [1,2]
 
 
 classes = createModel.classes
@@ -191,9 +191,9 @@ def DivergingInstancesFinder2(top_num):
 
 @app.route('/', methods = ["GET", "POST"])
 def index():
-    #diveraging_indices = DivergingInstancesFinder(100).tolist()
+    diveraging_indices = DivergingInstancesFinder(100).tolist()
     #hard code
-    diveraging_indices = [669, 252, 120, 480, 628, 945, 542, 852, 984, 658, 183, 23, 930, 827, 579, 394, 635, 849, 958, 216, 476, 190, 271, 43, 445, 758, 788, 612, 103, 751, 737, 939, 320, 602, 807, 640, 192, 856, 898, 454, 381, 764, 418, 588, 465, 630, 52, 529, 108, 316, 743, 485, 753, 623, 554, 502, 894, 6, 805, 760, 312, 286, 217, 632, 382, 997, 985, 374, 750, 506, 409, 705, 379, 42, 332, 993, 361, 590, 855, 308, 627, 413, 269, 290, 735, 584, 483, 688, 557, 141, 663, 661, 664, 283, 971, 67, 995, 932, 107, 531]
+    # diveraging_indices = [669, 252, 120, 480, 628, 945, 542, 852, 984, 658, 183, 23, 930, 827, 579, 394, 635, 849, 958, 216, 476, 190, 271, 43, 445, 758, 788, 612, 103, 751, 737, 939, 320, 602, 807, 640, 192, 856, 898, 454, 381, 764, 418, 588, 465, 630, 52, 529, 108, 316, 743, 485, 753, 623, 554, 502, 894, 6, 805, 760, 312, 286, 217, 632, 382, 997, 985, 374, 750, 506, 409, 705, 379, 42, 332, 993, 361, 590, 855, 308, 627, 413, 269, 290, 735, 584, 483, 688, 557, 141, 663, 661, 664, 283, 971, 67, 995, 932, 107, 531]
 
     data = Loss_Difference_Summary(losses_instance_data,bin_counts,sort_index)
     #data = jsonifydata(loss_data)
@@ -453,7 +453,7 @@ def grad_data():
 
 if __name__ == '__main__':
     #print(true_label)
-    app.run(host='0.0.0.0', port = 5000)
+    app.run(host='0.0.0.0', port = 5001)
 
 
     # print(instance_data_matrix_f1.shape,instance_data_matrix_f2.shape,instance_data_matrix_o.shape,instance_data_weight_f1.shape,instance_data_weight_f2.shape,instance_data_weight_o.shape)

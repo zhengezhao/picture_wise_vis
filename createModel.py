@@ -32,7 +32,7 @@ trainset, testset = None, None
 kwargs = {}
 
 cwd = os.getcwd()
-datasetname = 'fashion-mnist'
+datasetname = 'mnist'
 
 if datasetname == 'mnist':
     Dataset = torchvision.datasets.MNIST
@@ -237,10 +237,13 @@ if __name__ == '__main__':
     # Show_output_layer(model_path,'fashion-mnist_2','net_3_epoch1')
     # Show_output_layer(model_path,'fashion-mnist_2','net_4_epoch1')
 
-    net = initModel('fashion-mnist')
+    net = initModel('mnist')
 
-    TrainNN(net, 'net_6', lr = 0.00001, momentum=0.3)
+    TrainNN(net, 'net_1', lr = 0.00001, momentum=0.3)
 
+    net = initModel('mnist')
+
+    TrainNN(net, 'net_2', lr = 0.00001, momentum=0.3)
 
 
 

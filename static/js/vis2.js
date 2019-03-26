@@ -43,6 +43,16 @@ d3.selection.prototype.moveToFront = function() {
 };
 
 
+function ImageHighlight(){
+    if(IsDicZeros(legend_clicked)){
+        d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",false);
+    }
+    else{
+    d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes[tsne_data[k].label]]==1?false:true});
+    }
+}
+
+
 function createStreamGraph(){
 
 
@@ -438,7 +448,7 @@ function ShowImage(idx_list){
                     else{
                         dot_clicked=null;
                         d3.selectAll(".dot").classed("selectedDot",false);
-                        svg.selectAll(".image").classed("unselectedImage",function(k){return legend_clicked[classes_n[tsne_data[k].label]]==1?false:true});
+                        ImageHighlight();
                     }
 
                 }
@@ -633,7 +643,6 @@ function UpdateScatterPlot(query_data){
 function createScatterPlot(data){
 
     $("#SPReset").show();
-    $('#SPSwitch').hide();
 
     var svgHeight = document.getElementById("ScatterPlotDiv").offsetHeight;
     var svgWidth =  document.getElementById("ScatterPlotDiv").offsetWidth;
@@ -715,29 +724,53 @@ function createScatterPlot(data){
             if(!isBrushing){
                 d3.select(this).style("cursor", "pointer");
                 d3.select(this).classed("selectedDot",true);
-                ShowImage([i]);
+                ShowImage([d.index]);
                 d3.select(this).moveToFront();
+            }
+            else if(!d3.select(this).attr("class").includes("non_brushed")){
+                d3.select(this).style("cursor", "pointer");
+                d3.select(this).classed("selectedDot",true);
+                d3.select(this).moveToFront();
+                d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return k==d.index||k==dot_clicked?false:true});
+
             }
         })
         .on("mouseout",function(d,i){
             if(!isBrushing){
-                if(dot_clicked==null || dot_clicked!=i){
+                if(dot_clicked==null || dot_clicked!=d.index){
                     d3.select(this).style("cursor", "default");
                     d3.select(this).classed("selectedDot",false);
                     ShowImage([dot_clicked]);
-
+                }
+            }
+            else if(!d3.select(this).attr("class").includes("non_brushed")){
+                if(dot_clicked==null){
+                    d3.select(this).style("cursor", "default");
+                    d3.select(this).classed("selectedDot",false);
+                    ImageHighlight();
+                }
+                else if(dot_clicked!=d.index){
+                    d3.select(this).style("cursor", "default");
+                    d3.select(this).classed("selectedDot",false);
+                    d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return k==dot_clicked?false:true});
+                }
+                else{
+                    d3.select("#ImagesDiv").selectAll(".image").classed("unselectedImage",function(k){return k==dot_clicked?false:true});
                 }
             }
         })
         .on("click",function(d,i){
-            if(dot_clicked!=i){
-                dot_clicked= i;
-                d3.selectAll(".selectedDot").classed("selectedDot",false);
-                d3.select(this).classed("selectedDot",true);
-                ShowImage([i]);
-                d3.select(this).moveToFront();
+            if(!d3.select(this).attr("class").includes("non_brushed")){
+                if(dot_clicked!=d.index){
+                    dot_clicked= d.index;
+                    d3.selectAll(".selectedDot").classed("selectedDot",false);
+                    d3.select(this).classed("selectedDot",true);
+                    d3.select(this).moveToFront();
+                    SubmitInstanceData(dot_clicked);
+                    DrawSliders(dot_clicked);
+                }
+                else{dot_clicked=null}
             }
-            else{dot_clicked=null}
         });
 
 
@@ -748,7 +781,6 @@ function createScatterPlot(data){
 
     function reSet() {
           svg.select("g.brush").call(brush.move, null);
-          $('#SPSwitch').hide();
           d3.selectAll('rect.instances').remove();
           d3.selectAll('.bar')
             .style("fill", function(d,i){return color(index_new[d.index]);})
@@ -859,22 +891,6 @@ function isBrushed(brush_coords, cx, cy) {
 
     return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
 }
-
-
-function onClickShow(button_name,show_div,show_text,hide_text){
-    $('body').on('click','#'+button_name,function(event){
-         if ($('#'+show_div).is(":visible")) {
-            $('#'+button_name).text(show_text);
-
-            }
-        else{
-            $('#'+button_name).text(hide_text);
-            }
-        $('#'+show_div).toggle('show');
-    });
-}
-
-
 
 
 function DrawLossBar(data,modelID){
@@ -1802,319 +1818,11 @@ function DrawHiddenLayer_Query(data_id,data){
 
 
 
-
-
-//sort an array by its abs value
-function sortArrayByAbs(test){
-    var test_with_index = [];
-    for (var i in test) {
-        test_with_index.push([test[i], i]);
-    }
-    test_with_index.sort(function(left, right) {
-      return Math.abs(left[0]) < Math.abs(right[0]) ? 1 : -1;
-    });
-    var indexes = [];
-    var new_test = [];
-    for (var j in test_with_index) {
-        new_test.push(test_with_index[j][0]);
-        indexes.push(test_with_index[j][1]);
-    }
-
-    return [new_test,indexes]
-
-}
-
-
-
 $(document).ready(function(){
     createStreamGraph();
     DrawLegend();
-    onClickShow('streamGraphBtn','ScatterPlotdiv',"SHOW","HIDE");
     createScatterPlot(tsne_data);
 
 });
 
 
-/*  start legend code */
-// we want to display the gradient, so we have to draw it
-// var legendCanvas = document.createElement('canvas');
-// legendCanvas.width = 100;
-// legendCanvas.height = 10;
-// var min = document.querySelector('#min');
-// var max = document.querySelector('#max');
-// var gradientImg = document.querySelector('#gradient');
-// var legendCtx = legendCanvas.getContext('2d');
-// var gradientCfg = {};
-// function updateLegend(data) {
-//   // the onExtremaChange callback gives us min, max, and the gradientConfig
-//   // so we can update the legend
-//   min.innerHTML = data.min;
-//   max.innerHTML = data.max;
-//   // regenerate gradient image
-//   if (data.gradient != gradientCfg) {
-//     gradientCfg = data.gradient;
-//     var gradient = legendCtx.createLinearGradient(0, 0, 100, 1);
-//     for (var key in gradientCfg) {
-//       gradient.addColorStop(key, gradientCfg[key]);
-//     }
-//     legendCtx.fillStyle = gradient;
-//     legendCtx.fillRect(0, 0, 100, 10);
-//     gradientImg.src = legendCanvas.toDataURL();
-//   }
-// };
-/* legend code end */
-
-
-
-
-
-
-// right now it is not used
-function DrawStreamGraph(data,modelID){
-
-    var margin = {top:10, bottom:20, left:20, right:10};
-    var bBox = document.getElementById(modelID).getBoundingClientRect();
-    var svgWidth = bBox.width;
-    var svgHeight=  bBox.height;
-    var width = +svgWidth- margin.left-margin.right;
-    var height = +svgHeight -margin.top- margin.bottom;
-    var clicked = false;
-
-    var tooltip = d3.select('#streamgraphdiv').append('div').attr('class', 'hidden tooltip '+modelID);
-
-    function make_button(c_focus,epoch,c,value){
-        var button;
-        if(c_focus != c){
-            button = `<tr><td><button type='button' class="classes_button" epoch = '${epoch}' class='${c}'> ${c} : ${value.toFixed(4)} </button></td><tr>`;
-        }
-        else{
-            button = `<tr><td><button type='button' class="classes_button" style ="color:red" epoch = '${epoch}' class='${c}'> ${c} : ${value.toFixed(4)} </button></td><tr>`;
-        }
-        return button;
-    }
-
-    function tip_show(c_focus,data){
-       // console.log(d,i);
-        var e = data.epoch;
-        // var k = d;
-        var table = `<div>EPOCH: ${e} <button type ='button' class= "${modelID} x"> X </button>`;
-        table += `<table class="tip_table">`;
-        for(var i=0 ; i<10; i++){
-            table+= make_button(c_focus,e,classes[i],data[classes[i]]);
-        }
-        table+=`</table></div>`;
-        //console.log(table);
-        return table;
-    }
-
-
-
-
-    d3.select("#"+modelID).append("defs").append("clipPath")
-      .attr("id","clip")
-      .append("rect")
-      .attr("width",width)
-      .attr("height",height);
-
-    var svg = d3.select("#"+modelID).append("g")
-                .attr("class","inner_space")
-                .attr("transform","translate("+margin.left+","+margin.top+")");
-
-    //d3.select("#"+modelID).call(tip);
-
-
-    var stack = d3.stack().keys(classes)
-                  .order(d3.stackOrderNone)
-                  .offset(d3.stackOffsetWiggle);
-
-    var series = stack(data);
-
-    var x = d3.scaleLinear()
-              .domain([0, num_of_epoch])
-              .range([0, width]);
-    var new_x=x;
-
-    var y = d3.scaleLinear()
-        .domain([d3.min(series, stackMin  ), d3.max(series, stackMax)])
-        .range([height, 0]);
-
-    var new_y;
-
-    function stackMax(layer) {
-        return d3.max(layer, function(d) { return d[1]; });
-    }
-
-    function stackMin(layer) {
-      return d3.min(layer, function(d) { return d[0]; });
-    }
-
-    var area = d3.area()
-            .x(function(d, i) { return x(i+1); })
-            .y0(function(d) { return y(d[0]); })
-            .y1(function(d) { return y(d[1]); })
-            .curve(d3.curveBasis);
-
-    var xAxis = d3.axisBottom(x);
-    var gX = svg.append("g")
-        .attr("class", "axis axis--x")
-        .attr("transform", "translate(0," + height + ")")
-        .style('stroke','1px')
-        .call(xAxis);
-
-    var yAxis = d3.axisLeft(y);
-    var gY = svg.append("g")
-        .attr("class", "axis axis--y")
-        .style('stroke','1px')
-        .style("font","7px sans-serif")
-        .call(yAxis);
-
-    function zoomed() {
-        // console.log(d3.event.transform);
-        //console.log
-        new_x = d3.event.transform.rescaleX(x);
-        gX.call(xAxis.scale(new_x));
-        svg.selectAll(".area").attr("d", area.x(function(d,i) { return new_x(i+1); }));
-
-
-        new_y = d3.event.transform.rescaleY(y);
-        gY.call(yAxis.scale(new_y));
-        svg.selectAll(".area").attr("d", area.y0(function(d,i) { return new_y(d[0]); }));
-        svg.selectAll(".area").attr("d", area.y1(function(d,i) { return new_y(d[1]); }));
-        // svg.attr('transform', d3.event.transform);
-    }
-
-    zoom  = d3.zoom()
-        .scaleExtent([1,10])
-        .on("zoom",zoomed);
-
-    d3.select(svg.node().parentElement).call(zoom);
-
-    svg.selectAll(".area")
-       .data(series)
-       .enter().append("path")
-       .attr("class","area")
-       .attr("d", area)
-       .attr("fill", function(d,i) {return color(d.index); });
-
-
-
-    svg.selectAll(".area")
-    .attr("fill", function(d) { return color(d.index); })
-    .on('mousemove', function(d,i){
-        if(clicked==false){
-            d3.select(this).style('fill',d3.rgb(color(d.index)).brighter());
-            d3.select(this).style("cursor", "pointer");
-            mousex = d3.mouse(this)[0];
-            invertedx = Math.round(new_x.invert(mousex));
-
-            tooltip.classed("hidden",false)
-                   .attr('style', 'left:' + (d3.event.pageX-280) + 'px; top:' + (d3.event.pageY - 100) + 'px')
-                   .html(tip_show(d.key,data[invertedx-1]));
-        }
-        $("."+modelID+".x").click(function(){tooltip.classed('hidden',true); clicked=false;});
-       })
-    .on('mouseout', function(d){
-        d3.select(this).style('fill', color(d.index));
-        d3.select(this).style("cursor", "default");
-        //console.log(clicked);
-        if(clicked==false){
-        tooltip.classed('hidden', true);
-        }
-      })
-    .on('click',function(){
-        clicked=true; console.log("clicked");
-        var epoch = data[invertedx-1].epoch;
-
-    });
-
-
-    // .on('click',function(d){
-    //     console.log(d.key, invertedx);
-    //     class_chosen=d.key;
-    //     epoch_chosen = invertedx;
-    //     d3.request("http://0.0.0.0:5000/data")
-    //       .header("X-Requested-With", "XMLHttpRequest")
-    //       .header("Content-Type", "application/x-www-form-urlencoded")
-    //       .post(JSON.stringify([nn_chosen,d.key,invertedx]), function(e)
-    //         {
-    //             query_data = JSON.parse(e.response);
-    //             //console.log(query_data);
-
-    //             DrawScatterPlot(query_data);
-
-    //         });
-    //     });
-
-}
-
-
-
-function UpdateStackedBar(legend_clicked){
-    //console.log(legend_clicked);
-    var classes_new = [];
-    index_new  = [];
-    //rerange the classes based on legend_clicked
-    for(var i =0; i<classes.length;i++){
-        if(legend_clicked[classes[i]] ==1){
-            classes_new.unshift(classes[i]);
-            index_new.unshift(i);
-        }
-        else{
-            classes_new.push(classes[i]);
-            index_new.push(i);
-        }
-    }
-
-    console.log(index_new);
-
-    var stack = d3.stack()
-                   .keys(classes_new)
-                   .offset(d3.stackOffsetDiverging);
-
-
-    for (var i=0; i < num_of_nn.length; i++){
-
-        var modelID = "model"+ (num_of_nn[i]).toString();
-
-        var data = accuracy_data[i].data;
-
-        var series = stack(data);
-        var margin = {top:10, bottom:20, left:25, right:10};
-        var bBox = document.getElementById(modelID).getBoundingClientRect();
-        var svgWidth = bBox.width;
-        var svgHeight=  bBox.height;
-        var width = +svgWidth- margin.left-margin.right;
-        var height = +svgHeight -margin.top- margin.bottom;
-
-
-        for(row of series){
-            row = row.map(d=>{
-                d.index=row.index;
-                return d;
-            });
-        }
-
-        svg = d3.select("#"+modelID).select(".inner_space");
-
-
-        svg.selectAll(".group_class")
-            .data(series)
-            .attr("fill", function(d,i){
-                //console.log(index_new[i]);
-                return color(index_new[d.index]);
-            })
-            .selectAll("rect")
-            .data(function(d){return d;})
-            .attr('class','bar')
-            .transition()
-            .duration(1000)
-           // .attr("width", (width / num_of_epoch) - 1)
-           // .attr("x", function(d){return (x(d.data.epoch) - width / num_of_epoch / 2) + 1;})
-           .attr("y", function(d) { return scales_stackedbar[modelID].y(d[1]); })
-           .attr("height", function(d) {
-                return scales_stackedbar[modelID].y(d[0]) - scales_stackedbar[modelID].y(d[1]);
-            });
-
-
-    }
-}

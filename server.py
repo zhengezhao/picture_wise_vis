@@ -208,6 +208,7 @@ def get_class_data():
     class_idx = classes.index(class_name)
     model_idx = int(modelid[5:])
     epoch_idx = int(epoch_idx)
+
     print('epoch:',epoch_idx,'class:',class_name,'class_idx:',class_idx,'model_idx:',model_idx)
     selected_index = sort_index[bin_counts[class_idx]:bin_counts[class_idx+1]]
 
@@ -218,9 +219,9 @@ def get_class_data():
 
     #print(losses_instance_data[selected_index].shape)
 
-    loss_after = losses_instance_data[selected_index][:,model_idx-1,epoch_idx]
+    loss_after = losses_instance_data[selected_index][:,num_of_nn.index(model_idx),epoch_idx]
 
-    loss_before = losses_instance_data[selected_index][:,model_idx-1,epoch_idx-1]
+    loss_before = losses_instance_data[selected_index][:,num_of_nn.index(model_idx),epoch_idx-1]
 
     #print(loss_before,loss_after)
 

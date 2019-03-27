@@ -514,8 +514,14 @@ function DrawSliders(dot_clicked_){
 
     var x = d3.scaleLinear().domain([0, 100]).range([0, width]);
 
+    var default_index_min = 0;
+    var default_index_max = 100;
+
+
     for (var i =0;i<num_of_nn.length;i++){
 
+        doubleClicked[i][1] = default_index_max;
+        doubleClicked[i][0] = default_index_min;
         DrawSlider(i);
     }
 
@@ -523,13 +529,6 @@ function DrawSliders(dot_clicked_){
 
     function DrawSlider(i){
         var svg  = div.append("svg").attr("width",svgWidth).attr("height",svgHeight).attr("id","loss_bar_model"+num_of_nn[i].toString()).append("g").attr("transform","translate("+margin.left+","+margin.top+")");
-
-        var default_index_min = 0;
-
-        var default_index_max = 100;
-
-        doubleClicked[i][1] = default_index_max;
-        doubleClicked[i][0] = default_index_min;
 
 
         svg.append("text")
@@ -598,15 +597,31 @@ function DrawSliders(dot_clicked_){
                 console.log(d1);
                 doubleClicked[i][0] = d1[0];
                 doubleClicked[i][1] = d1[1];
-                SubmitInstanceData(dot_clicked);
-                svg.selectAll(".text_loss").remove();
 
-                svg.append("text")
-                    .classed("text_loss",true)
-                    .attr("x",width-220)
-                    .attr("y",2)
-                    .style("fill","black")
+                svg.select(".text_loss")
                     .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+
+
+                if(event.shiftKey){
+                    console.log("shiftKey pressed");
+                    var other_index = null;
+                    if(i==0){
+                        other_index=1;
+                    }
+                    else{
+                        other_index=0;
+                    }
+
+                    doubleClicked[other_index][0] = d1[0];
+                    doubleClicked[other_index][1] = d1[1];
+                    var svg_ = d3.select("#loss_bar_model"+num_of_nn[other_index].toString());
+                    svg_.select(".brush").transition().call(d3.event.target.move, d1.map(x));
+                    svg_.select(".text_loss").text("Epoch: "+(doubleClicked[other_index][0]).toString()+" ~ " +(doubleClicked[other_index][1]).toString()+" Loss_Change: "+(data[other_index][doubleClicked[other_index][1]]- data[other_index][doubleClicked[other_index][0]]).toFixed(4));
+                }
+
+                SubmitInstanceData(dot_clicked);
+
+
             }
         }
 
@@ -1544,6 +1559,8 @@ function DrawQueryResult(data,data_id){
     x.domain([min-max*0.1,max]);
     y.domain([min-max*0.1,max]);
 
+    var diagonal_lines =[{"min": 0, "max": width}];
+
     var xAxis = d3.axisBottom(x).tickSize(-height);
     var yAxis = d3.axisLeft(y).tickSize(-width);
 
@@ -1568,6 +1585,14 @@ function DrawQueryResult(data,data_id){
 
 
     console.log(data);
+
+    objects.selectAll(".diagonal_path")
+        .data(diagonal_lines)
+        .enter().append("path")
+        .attr("class","diagonal_path axisLine")
+        .attr("d",function(d){ console.log(d);
+            var path = "M"+d.min.toString()+" "+d.max.toString()+ " L"+d.max.toString()+" "+d.min.toString();
+            return path;});
 
     objects.selectAll(".query_dot")
         .data(data,d=>d.index)
@@ -1626,6 +1651,9 @@ function DrawQueryResult(data,data_id){
         svg.selectAll(".query_dot")
               .attr("transform", d3.event.transform)
               .attr("r",3/d3.event.transform.k);
+
+        svg.selectAll(".diagonal_path")
+            .attr("transform", d3.event.transform);
     }
 
 }

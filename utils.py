@@ -252,7 +252,9 @@ def GradCamAlgorithm(weight, matrix,up_dim):
 
     upsample = nn.Upsample(size=(up_dim[0],up_dim[1]),mode='bilinear',align_corners=False)
 
-    return upsample(average_tensor).numpy().flatten()
+    upsample_tensor = upsample(average_tensor).numpy().flatten()
+
+    return np.maximum(upsample_tensor,0)
 
 
 

@@ -1084,6 +1084,8 @@ function DrawHiddenLayerDiv(data,dot_clicked){
                 tooltip.classed("hidden",true);
             });
 
+    ComputeLayerColorMap(data);
+
     for (var i=0; i < num_of_nn.length; i++){
         var modelID = "hiddenlayer_model"+ (num_of_nn[i]).toString();
 
@@ -1103,8 +1105,8 @@ function DrawHiddenLayerDiv(data,dot_clicked){
           .attr("id","heatmap"+(i+1).toString()+"_g")
           .attr("transform","translate("+(input_margin.left+25)+","+input_margin.top+")");
 
-        //DrawStreamGraph(accuracy_data[i].data,modelID);
-       DrawHiddenLayer(data[i],modelID,i+1);
+
+        DrawHiddenLayer(data[i],modelID,i+1);
 
     }
     if(layer_clicked!=null){
@@ -1122,6 +1124,26 @@ function DrawHiddenLayerDiv(data,dot_clicked){
     }
 
 
+}
+
+function ComputeLayerColorMap(data)
+{
+    for (var label =0; label<data[0].length; label++){
+        scales_hiddenLayerbar[data[0][label].label] ={};
+        for(var i =0; i< num_of_nn.length; i++){
+            var data_origin = data[i][label].data_origin;
+            var data_prev = data[i][label].data_prev;
+            var data_diff = data_origin.map(function(d,i){return d - data_prev[i];});
+            min = d3.extent(data_diff)[0];
+            max = d3.extent(data_diff)[1];
+            if(scales_hiddenLayerbar[data[i][label].label].max == null || scales_hiddenLayerbar[data[i][label].label].max < max){
+                scales_hiddenLayerbar[data[i][label].label].max = max;
+            }
+            if(scales_hiddenLayerbar[data[i][label].label].min == null || scales_hiddenLayerbar[data[i][label].label].min > min){
+                scales_hiddenLayerbar[data[i][label].label].min = min;
+            }
+        }
+    }
 }
 
 
@@ -1148,27 +1170,26 @@ function DrawHiddenLayer(data,modelID,index_model){
         var data_prev = data[plot_i].data_prev;
         var plot_data = data_origin.map(function(d,i){return d - data_prev[i];});
 
-        min = d3.extent(plot_data)[0];
-        max = d3.extent(plot_data)[1];
+
+        // var min_length = scales_hiddenLayerbar[data_id].min;
+        // var max_length = scales_hiddenLayerbar[data_id].max;
+
+        var min = d3.min(plot_data);
+        var max = d3.max(plot_data);
 
         var max_abs = Math.max(Math.abs(min),Math.abs(max));
         var min_abs = max_abs*(-1.0);
 
         var color = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
 
-        scales_hiddenLayerbar[modelID+data_id] = {}
+
+        scales_hiddenLayerbar[modelID+data_id] = {};
         scales_hiddenLayerbar[modelID+data_id].c = color;
 
-
-        //var color = d3.scaleLinear().domain(d3.extent(plot_data)).range(["white", "black"]);
 
         var row_size = rectSize*col_num+1;
 
         var height_size = plot_data.length/rectSize*col_num+ (plot_data.length/(rectSize*col_num))/rectSize-1;
-
-
-        // var gridSize = 4;
-        //console.log(row_size,height_size,gridSize);
 
         var svg;
 
@@ -1223,10 +1244,11 @@ function DrawHiddenLayer(data,modelID,index_model){
         var plot_data = data_origin.map(function(d,i){return d-data_prev[i];});
         var plot_data_index = Array.apply(null, {length: plot_data.length}).map(Number.call, Number);
 
-        min = d3.extent(plot_data)[0];
-        max = d3.extent(plot_data)[1];
 
-        var max_abs = Math.max(Math.abs(min),Math.abs(max));
+        var min_len = scales_hiddenLayerbar[data_id].min;
+        var max_len = scales_hiddenLayerbar[data_id].max;
+
+        var max_abs = Math.max(Math.abs(d3.min(plot_data)),Math.abs(d3.max(plot_data)));
         var min_abs = max_abs*(-1.0);
 
         var color = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
@@ -1240,7 +1262,7 @@ function DrawHiddenLayer(data,modelID,index_model){
                 .attr("class","inner_space")
                 .attr("transform","translate("+margin.left+","+margin.top+")");
 
-        var x = d3.scaleLinear().domain(d3.extent(plot_data)).range([0,width]).nice();
+        var x = d3.scaleLinear().domain([min_len,max_len]).range([0,width]).nice();
         var y = d3.scaleBand().domain(plot_data.map(function(d,i){return plot_data_index[i];})).range([0, height]);
 
         scales_hiddenLayerbar[modelID+data_id] = {};
@@ -1347,7 +1369,6 @@ function UpdateConvChart(modelID,data,index_model){
         svg = d3.select("#"+modelID).select("."+data_label).select(".inner_space");
     }
 
-
     var min = d3.min(data_update);
     var max = d3.max(data_update);
 
@@ -1384,10 +1405,10 @@ function UpdateBarChart(modelID,data,index_model){
         svg = d3.select("#"+modelID).select("."+data_label).select(".inner_space");
     }
 
-    var min = d3.extent(data_update)[0];
-    var max = d3.extent(data_update)[1];
+    var min = scales_hiddenLayerbar[data_label].min;
+    var max = scales_hiddenLayerbar[data_label].max;
 
-    var max_abs = Math.max(Math.abs(min),Math.abs(max));
+    var max_abs = Math.max(Math.abs(d3.min(data_update)),Math.abs(d3.max(data_update)));
     var min_abs = max_abs*(-1.0);
 
     var color_update = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
@@ -1395,7 +1416,7 @@ function UpdateBarChart(modelID,data,index_model){
 
 
 
-    var x_update = d3.scaleLinear().domain(d3.extent(data_update)).range([0,width]).nice();
+    var x_update = d3.scaleLinear().domain([min,max]).range([0,width]).nice();
     var y_update = d3.scaleBand().domain(data_update.map(function(d,i){return data_index[i];})).range([0, height]);
 
     var xAxis_update =d3.axisBottom(x_update).ticks(5);

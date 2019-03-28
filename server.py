@@ -252,30 +252,43 @@ def get_image_data():
         data_file_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_chosen[0])))
 
 
-        grad_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen[0],selectedDot)['c1']
+        grad_prev = utils.GradientBackPropogation(nn_chosen,epoch_chosen[0],selectedDot)
 
-        grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen[1],selectedDot)['c1']
+        grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen[1],selectedDot)
 
-        weight = np.mean(grad, axis=1)
-        weight_prev = np.mean(grad_prev,axis=1)
+
+        weight = np.mean(grad['c1'], axis=1)
+        weight_prev = np.mean(grad_prev['c1'],axis=1)
         matrix_c1 = data_file[0]['c1'][selectedDot]
         matrix_c1_prev = data_file_prev[0]['c1'][selectedDot]
 
         gradcam = utils.GradCamAlgorithm(weight,matrix_c1,[28,28])
 
         gradcam_prev = utils.GradCamAlgorithm(weight_prev,matrix_c1_prev,[28,28])
-        #gradcam_prev = np.zeros(784)
 
-        for label in ['c1','c2','f1','o']:
+        #gradcam_prev = np.zeros_like(gradcam)
+
+        for label in ['c1','c2','f1']:
+            w = np.mean(grad[label], axis=1)
+            w_prev = np.mean(grad_prev[label],axis=1)
+            m_c1 = data_file[0][label][selectedDot]
+            m_c1_prev = data_file_prev[0][label][selectedDot]
+            data_origin  = (w*(m_c1.reshape((m_c1.shape[0],-1)).T)).T.flatten().tolist()
+            data_prev = (w_prev*(m_c1_prev.reshape((m_c1_prev.shape[0],-1)).T)).T.flatten().tolist()
+            data_s.append({'label': label, 'data_origin': data_origin, 'data_prev': data_prev})
+
+        for label in ['o']:
             matrix = data_file[0][label][selectedDot]
             matrix_prev = data_file_prev[0][label][selectedDot]
             data_s.append({'label': label, 'data_origin': matrix.flatten().tolist(), 'data_prev': matrix_prev.flatten().tolist()})
 
         data_s.append({'label':'input','data_origin':gradcam.tolist(), 'data_prev': gradcam_prev.tolist()})
 
+
         data_summary.append(data_s)
 
     return jsonify(data_summary)
+
 
 def SearchActiviationDiff(nn,epochs,layer_id,index_dot):
     data_file = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn,epochs[1])))[0][layer_id].reshape(num_of_input,-1)

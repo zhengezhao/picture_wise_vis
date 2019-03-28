@@ -257,6 +257,7 @@ def get_image_data():
 
         grad = utils.GradientBackPropogation(nn_chosen,epoch_chosen[1],selectedDot)['c1']
 
+
         weight = np.mean(grad, axis=1)
         weight_prev = np.mean(grad_prev,axis=1)
         matrix_c1 = data_file[0]['c1'][selectedDot]
@@ -265,7 +266,7 @@ def get_image_data():
         gradcam = utils.GradCamAlgorithm(weight,matrix_c1,[28,28])
 
         gradcam_prev = utils.GradCamAlgorithm(weight_prev,matrix_c1_prev,[28,28])
-        #gradcam_prev = np.zeros(784)
+        #gradcam_prev = np.zeros_like(gradcam)
 
         for label in ['c1','c2','f1','o']:
             matrix = data_file[0][label][selectedDot]
@@ -394,9 +395,9 @@ def grad_data():
     gradcam = utils.GradCamAlgorithm(weight,matrix_c1,[28,28])
 
     gradcam_prev = utils.GradCamAlgorithm(weight_prev,matrix_c1_prev,[28,28])
+    #gradcam_prev = np.zeros_like(gradcam)
 
     gradcam_diff.append({'label':'input','data':(gradcam - gradcam_prev).tolist()})
-    #gradcam_diff.append({'label':'input','data':gradcam.tolist()})
     for label in ['c1','c2','f1']:
 
         w = np.mean(grad[label], axis=1)

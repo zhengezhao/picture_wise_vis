@@ -457,7 +457,9 @@ function ShowImage(idx_list){
                     }
 
                 }
-                DrawSliders(dot_clicked);
+                DrawSliders(dot_clicked,[[0,100],[0,100]]);
+                SubmitInstanceData(dot_clicked);
+
             });
     }
 
@@ -498,7 +500,7 @@ function SubmitInstanceData(dot_clicked){
 
 }
 
-function DrawSliders(dot_clicked_){
+function DrawSliders(dot_clicked_,default_indices){
 
     var div = d3.select("#slider-epoch");
     var svgHeight = document.getElementById("slider-epoch").offsetHeight/2;
@@ -514,18 +516,15 @@ function DrawSliders(dot_clicked_){
 
     var x = d3.scaleLinear().domain([0, 100]).range([0, width]);
 
-    var default_index_min = 0;
-    var default_index_max = 100;
 
 
     for (var i =0;i<num_of_nn.length;i++){
 
-        doubleClicked[i][1] = default_index_max;
-        doubleClicked[i][0] = default_index_min;
+        doubleClicked[i][0] = default_indices[i][0];
+        doubleClicked[i][1] = default_indices[i][1];
         DrawSlider(i);
     }
 
-    SubmitInstanceData(dot_clicked_);
 
     function DrawSlider(i){
         var svg  = div.append("svg").attr("width",svgWidth).attr("height",svgHeight).attr("id","loss_bar_model"+num_of_nn[i].toString()).append("g").attr("transform","translate("+margin.left+","+margin.top+")");
@@ -536,7 +535,7 @@ function DrawSliders(dot_clicked_){
             .attr("x",width-220)
             .attr("y",2)
             .style("fill","black")
-            .text("Epoch: "+(default_index_min).toString()+" ~ " +default_index_max.toString()+" Loss_Change: "+(data[i][default_index_max]- data[i][default_index_min]).toFixed(4));
+            .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
 
 
 
@@ -626,8 +625,11 @@ function DrawSliders(dot_clicked_){
         }
 
 
-        svg.append("g").attr("class","brush").call(brush);
-        // .call(brush.move,[default_index_min,default_index_max].map(x));
+        var brushing = svg.append("g").attr("class","brush").call(brush);
+
+        if(doubleClicked[i][0]!=0 || doubleClicked[i][1]!=100){
+            brushing.call(brush.move, doubleClicked[i].map(x));
+        }
 
     }
 
@@ -789,8 +791,8 @@ function createScatterPlot(data){
                     d3.selectAll(".selectedDot").classed("selectedDot",false);
                     d3.select(this).classed("selectedDot",true);
                     d3.select(this).moveToFront();
+                    DrawSliders(dot_clicked,[[0,100],[0,100]]);
                     SubmitInstanceData(dot_clicked);
-                    DrawSliders(dot_clicked);
                 }
                 else{dot_clicked=null}
             }
@@ -1722,6 +1724,7 @@ function DrawImage_Query(selectedDot_index){
             })
         .on("click",function(){
             dot_clicked = selectedDot_index;
+            DrawSliders(dot_clicked,doubleClicked);
             SubmitInstanceData(selectedDot_index);
         });
 

@@ -1635,19 +1635,16 @@ function DrawQueryResult(data,data_id){
 
         })
         .on("mouseout",function(d,i){
-            if(selectedDot_Query==null){
+            d3.select(this).style("cursor", "default");
+            if(selectedDot_Query == d.index){
+                d3.select(this).style("cursor", "default");
+            }
+            else{
+               d3.select(this).classed("selectedQueryDot",false);
+               DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
+               DrawImage_Query(selectedDot_Query);
+            }
 
-                d3.select(this).style("cursor", "default");
-                d3.select(this).classed("selectedQueryDot",false);
-                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
-                DrawImage_Query(null);
-            }
-            else if(selectedDot_Query!=d.index){
-                d3.select(this).style("cursor", "default");
-                d3.select(this).classed("selectedQueryDot",false);
-                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
-                DrawImage_Query(selectedDot_Query);
-            }
         })
         .on("click",function(d,i){
             d3.select(this).moveToFront();
@@ -1655,8 +1652,6 @@ function DrawQueryResult(data,data_id){
                 selectedDot_Query=d.index;
                 d3.selectAll(".selectedQueryDot").classed("selectedQueryDot",false);
                 d3.select(this).classed("selectedQueryDot",true);
-                DrawHiddenLayer_Query(data_id,data[selectedDot_Query]);
-                DrawImage_Query(data[selectedDot_Query].index);
             }
             else{selectedDot_Query=null}
         });

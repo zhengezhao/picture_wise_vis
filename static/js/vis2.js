@@ -14,7 +14,7 @@ var legend_clicked = {};
 var layer_clicked=null;
 var scales_query_scatter={};
 var selectedDot_Query = null;
-var label_clicked = {};
+var label_clicked_list = [{},{}];
 var modelID_list =["hiddenlayer_model5","hiddenlayer_model6"];
 
 
@@ -1151,6 +1151,8 @@ function ComputeLayerColorMap(data)
 
 
 function DrawHiddenLayer(data,modelID,index_model){
+
+    var label_clicked =label_clicked_list[modelID_list.indexOf(modelID)];
     //console.log(data);
     InitialDic(label_clicked,index_origin);
 
@@ -1309,8 +1311,6 @@ function DrawHiddenLayer(data,modelID,index_model){
             color  = d3.scaleOrdinal(d3.schemeCategory10);
             bars.style("fill",function(d,i){return color(i);});
             bars.on("click",function(d,i){
-                console.log(i.toString(),d);
-                console.log(label_clicked);
                 if(label_clicked[i]==1){
                     label_clicked[i] = 0;
                     d3.select(this).style("stroke","none");
@@ -1319,6 +1319,7 @@ function DrawHiddenLayer(data,modelID,index_model){
                     label_clicked[i]=1;
                     d3.select(this).style("stroke","black").style("stroke-width",2);
                 }
+                console.log(label_clicked_list[0],label_clicked_list[1]);
                 UpdateHiddenCharts(modelID,label_clicked,index_model);
 
             });

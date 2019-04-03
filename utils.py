@@ -12,6 +12,7 @@ from skimage import color
 import torch.nn as nn
 import torch.nn.functional as F
 from math import *
+from sklearn.decomposition import PCA
 
 def stable_softmax(X):
     exps = np.exp(X - np.max(X))
@@ -51,6 +52,9 @@ datasetname = 'fashion-mnist'
 
 images_folder = os.path.join(cwd,'static/data',datasetname,'test-images')
 tsne_position = os.path.join(cwd,'static/data',datasetname,'tsne_position.npy')
+
+
+full_data_path =os.path.join(cwd,'static/data',datasetname,'data_full_layer')
 
 def im_trans(img):
     img = img / 2 + 0.5     # unnormalize
@@ -288,6 +292,61 @@ def dumpPredictions():
 
     # return a
 
+def PCAPlotofDifference(nn_chosen,epoch_start,epoch_end):
+
+    output = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_end)))[0]['o']
+
+    output_prev = np.load(os.path.join(full_data_path,'data_nn{0}_epoch{1}.npy'.format(nn_chosen,epoch_start)))[0]['o']
+
+
+    tsne_data = np.load(os.path.join(cwd,'static/data',datasetname,'tsne_position.npy'))
+
+    output_diff = output-output_prev
+
+    print(output_diff.shape)
+
+    pca = PCA(n_components=2)
+    pca.fit(output_diff)
+    projected = pca.transform(output_diff)
+
+    results = []
+
+
+    for i in range(len(tsne_data)):
+        print({'label': tsne_data[i]['label'], 'data':projected[i].tolist(), 'index':i})
+        results.append({'label': tsne_data[i]['label'], 'data':projected[i].tolist(), 'index':i})
+    print(results)
+
+    return results
+
+
+from matplotlib.colors import LinearSegmentedColormap
+def legendDraw():
+    x = np.arange(0, np.pi, 0.1)
+    y = np.arange(0, 2 * np.pi, 0.1)
+    X, Y = np.meshgrid(x, y)
+    Z = np.cos(X) * np.sin(Y) * 10
+
+    colors = ['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']
+
+    n_bins = [1000]  # Discretizes the interpolation into bins
+    cmap_name = 'my_list'
+    fig, axs = plt.subplots(2, 2, figsize=(6, 9))
+    fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
+    for n_bin, ax in zip(n_bins, axs.ravel()):
+        # Create the colormap
+        cm = LinearSegmentedColormap.from_list(
+            cmap_name, colors, N=n_bin)
+        # Fewer bins will result in "coarser" colomap interpolation
+        im = ax.imshow(Z, interpolation='nearest', origin='lower', cmap=cm)
+        ax.set_title("N bins: %s" % n_bin)
+        fig.colorbar(im, ax=ax)
+
+    plt.show()
+
+
+
+
 
 
 
@@ -299,6 +358,8 @@ def dumpPredictions():
 
 
 if __name__ == '__main__':
+    legendDraw()
+    #PCAPlotofDifference(5,0,50)
     #dumpImages()
     #dump_tsne_images()
     #plot_tsne_images()
@@ -324,11 +385,11 @@ if __name__ == '__main__':
     # plt.colorbar()
     # plt.show()
 
-    a=[1,2]
+    # a=[1,2]
 
-    b= [[[1,2],[2,2]],[[2,5],[2,4]]]
+    # b= [[[1,2],[2,2]],[[2,5],[2,4]]]
 
 
-    GradCamAlgorithm(a,b,2,[4,4])
+    # GradCamAlgorithm(a,b,2,[4,4])
 
     #test()

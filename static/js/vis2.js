@@ -352,7 +352,7 @@ function DrawStackedBarChat(data,modelID){
         //console.log(d);
         if(clicked==false && isBrushing==false){
             d3.select(this).style('fill',d3.rgb(color(index_new[d.index])).brighter());
-            d3.select(this).style("cursor", "pointer");
+
             mousex = d3.mouse(this)[0];
             //invertedx = Math.round(scales_stackedbar[modelID].x.invert(mousex));
             invertedx = Math.round(new_x.invert(mousex));
@@ -387,6 +387,7 @@ function DrawStackedBarChat(data,modelID){
        })
     .on('mouseout', function(d){
         if(isBrushing==false){
+            //d3.select(this).style('fill',d3.rgb(color(index_new[d.index])).brighter());
             d3.select(this).style('fill', color(index_new[d.index]));
             d3.select(this).style("cursor", "default");
             //console.log(clicked);
@@ -395,7 +396,9 @@ function DrawStackedBarChat(data,modelID){
             }
           }
     })
-    .on('click',function(){if(isBrushing==false){
+    .on('click',function(d){
+        //d3.select(this).style('fill',d3.rgb(color(index_new[d.index])).brighter());
+        if(isBrushing==false){
         clicked=true;
         $('#SPReset').trigger('click');
 
@@ -535,7 +538,7 @@ function DrawSliders(dot_clicked_,default_indices){
             .attr("x",width-220)
             .attr("y",2)
             .style("fill","black")
-            .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+            .text("Epoch: "+(doubleClicked[i][0]).toString()+" vs " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
 
 
 
@@ -598,7 +601,7 @@ function DrawSliders(dot_clicked_,default_indices){
                 doubleClicked[i][1] = d1[1];
 
                 svg.select(".text_loss")
-                    .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+                    .text("Epoch: "+(doubleClicked[i][0]).toString()+" vs " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
 
 
                 if(event.shiftKey){
@@ -615,7 +618,7 @@ function DrawSliders(dot_clicked_,default_indices){
                     doubleClicked[other_index][1] = d1[1];
                     var svg_ = d3.select("#loss_bar_model"+num_of_nn[other_index].toString());
                     svg_.select(".brush").transition().call(d3.event.target.move, d1.map(x));
-                    svg_.select(".text_loss").text("Epoch: "+(doubleClicked[other_index][0]).toString()+" ~ " +(doubleClicked[other_index][1]).toString()+" Loss_Change: "+(data[other_index][doubleClicked[other_index][1]]- data[other_index][doubleClicked[other_index][0]]).toFixed(4));
+                    svg_.select(".text_loss").text("Epoch: "+(doubleClicked[other_index][0]).toString()+" vs " +(doubleClicked[other_index][1]).toString()+" Loss_Change: "+(data[other_index][doubleClicked[other_index][1]]- data[other_index][doubleClicked[other_index][0]]).toFixed(4));
                 }
 
                 SubmitInstanceData(dot_clicked);
@@ -654,15 +657,16 @@ function UpdateScatterPlot(epoch_chosen,class_chosen, modelID){
         diff_data.push(data_point);
     }
 
-    var min= d3.min(diff_data,d=>d.loss_data);
-    var max =d3.max(diff_data,d=>d.loss_data);
+
+    var min= d3.min(diff_data.filter(function(d,i){return d.label ==class_chosen;}),d=>d.loss_data);
+    var max =d3.max(diff_data.filter(function(d,i){return d.label ==class_chosen;}),d=>d.loss_data);
 
     var max_abs = Math.max(Math.abs(min),Math.abs(max));
     var min_abs = max_abs*(-1.0);
 
     var color_loss = d3.scaleLinear().domain([min_abs,min_abs/3.0*2.0,min_abs/3.0,0.0,max_abs/3.0,max_abs/3.0*2.0,max_abs]).range(['#d73027','#fc8d59','#fee090','#ffffbf','#e0f3f8','#91bfdb','#4575b4']);
 
-    d3.select("#ScatterPlot").selectAll(".dot").style("fill",function(d){return color_loss(diff_data[d.index].loss_data);}).classed("unSelectedDot",function(d){return d.label==class_chosen?false:true});
+    d3.select("#ScatterPlot").selectAll(".dot").style("fill",function(d){return d.label == class_chosen?color_loss(diff_data[d.index].loss_data):color(d.label)}).classed("unSelectedDot",function(d){return d.label==class_chosen?false:true});
 }
 
 function createScatterPlot(data){
@@ -1622,7 +1626,7 @@ function DrawQueryResult(data,data_id){
         .data(data,d=>d.index)
         .enter().append("circle")
         .attr("class", "query_dot")
-        .attr("r", 3)
+        .attr("r", 5)
         .attr("cx", function(d){return x(d.x)})
         .attr("cy",function(d){return y(d.y)})
         .style("fill",function(d,i){

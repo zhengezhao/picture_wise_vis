@@ -531,7 +531,7 @@ function DrawSliders(dot_clicked_,default_indices){
             .attr("x",width-220)
             .attr("y",2)
             .style("fill","black")
-            .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+            .text("Epoch: "+(doubleClicked[i][0]).toString()+" vs " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
 
 
 
@@ -594,7 +594,7 @@ function DrawSliders(dot_clicked_,default_indices){
                 doubleClicked[i][1] = d1[1];
 
                 svg.select(".text_loss")
-                    .text("Epoch: "+(doubleClicked[i][0]).toString()+" ~ " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
+                    .text("Epoch: "+(doubleClicked[i][0]).toString()+" vs " +(doubleClicked[i][1]).toString()+" Loss_Change: "+(data[i][doubleClicked[i][1]]- data[i][doubleClicked[i][0]]).toFixed(4));
 
 
                 if(event.shiftKey){
@@ -611,7 +611,7 @@ function DrawSliders(dot_clicked_,default_indices){
                     doubleClicked[other_index][1] = d1[1];
                     var svg_ = d3.select("#loss_bar_model"+num_of_nn[other_index].toString());
                     svg_.select(".brush").transition().call(d3.event.target.move, d1.map(x));
-                    svg_.select(".text_loss").text("Epoch: "+(doubleClicked[other_index][0]).toString()+" ~ " +(doubleClicked[other_index][1]).toString()+" Loss_Change: "+(data[other_index][doubleClicked[other_index][1]]- data[other_index][doubleClicked[other_index][0]]).toFixed(4));
+                    svg_.select(".text_loss").text("Epoch: "+(doubleClicked[other_index][0]).toString()+" vs " +(doubleClicked[other_index][1]).toString()+" Loss_Change: "+(data[other_index][doubleClicked[other_index][1]]- data[other_index][doubleClicked[other_index][0]]).toFixed(4));
                 }
 
                 SubmitInstanceData(dot_clicked);
